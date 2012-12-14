@@ -13,6 +13,8 @@ void usb_amd_quirk_pll_enable(void);
 void usb_enable_intel_xhci_ports(struct pci_dev *xhci_pdev);
 void usb_disable_xhci_ports(struct pci_dev *xhci_pdev);
 void sb800_prefetch(struct device *dev, int on);
+bool usb_is_intel_qrk(struct pci_dev *pdev);
+void usb_set_qrk_bulk_thresh(struct pci_dev *pdev);
 #else
 struct pci_dev;
 static inline void usb_amd_quirk_pll_disable(void) {}
