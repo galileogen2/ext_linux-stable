@@ -736,8 +736,6 @@ static u32 i2c_dw_read_clear_intrbits(struct dw_i2c_dev *dev)
 		dw_readl(dev, DW_IC_CLR_RX_DONE);
 	if (stat & DW_IC_INTR_ACTIVITY)
 		dw_readl(dev, DW_IC_CLR_ACTIVITY);
-	if (stat & DW_IC_INTR_STOP_DET)
-		dw_readl(dev, DW_IC_CLR_STOP_DET);
 	if (stat & DW_IC_INTR_START_DET)
 		dw_readl(dev, DW_IC_CLR_START_DET);
 	if (stat & DW_IC_INTR_GEN_CALL)
@@ -788,8 +786,21 @@ irqreturn_t i2c_dw_isr(int this_irq, void *dev_id)
 	 * the current transmit status.
 	 */
 
+	/*
+	 * Process stop condition after the last transaction segment is
+	 * transmitted (and received if appropriate).
+	 */
+	if (dev->msgs_num == dev->msg_write_idx
+		&& (DW_IC_INTR_STOP_DET & dw_readl(dev, DW_IC_INTR_STAT))
+		&& 0 == dw_readl(dev, DW_IC_TXFLR)
+		&& 0 == dw_readl(dev, DW_IC_RXFLR)
+		&& 0 == dev->rx_outstanding) {
+			dw_readl(dev, DW_IC_CLR_STOP_DET);
+			complete(&dev->cmd_complete);
+	}
+
 tx_aborted:
-	if ((stat & (DW_IC_INTR_TX_ABRT | DW_IC_INTR_STOP_DET)) || dev->msg_err)
+	if ((stat & (DW_IC_INTR_TX_ABRT)) || dev->msg_err)
 		complete(&dev->cmd_complete);
 
 	return IRQ_HANDLED;
