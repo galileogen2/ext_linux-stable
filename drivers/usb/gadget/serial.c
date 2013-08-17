@@ -239,6 +239,7 @@ static __refdata struct usb_composite_driver gserial_driver = {
 	.unbind		= gs_unbind,
 };
 
+static int bCfgVal;
 static int __init init(void)
 {
 	/* We *could* export two configs; that'd be much cleaner...
@@ -246,19 +247,19 @@ static int __init init(void)
 	 */
 	if (use_acm) {
 		serial_config_driver.label = "CDC ACM config";
-		serial_config_driver.bConfigurationValue = 2;
+		serial_config_driver.bConfigurationValue = ++bCfgVal;
 		device_desc.bDeviceClass = USB_CLASS_COMM;
 		device_desc.idProduct =
 				cpu_to_le16(GS_CDC_PRODUCT_ID);
 	} else if (use_obex) {
 		serial_config_driver.label = "CDC OBEX config";
-		serial_config_driver.bConfigurationValue = 3;
+		serial_config_driver.bConfigurationValue = ++bCfgVal;
 		device_desc.bDeviceClass = USB_CLASS_COMM;
 		device_desc.idProduct =
 			cpu_to_le16(GS_CDC_OBEX_PRODUCT_ID);
 	} else {
 		serial_config_driver.label = "Generic Serial config";
-		serial_config_driver.bConfigurationValue = 1;
+		serial_config_driver.bConfigurationValue = ++bCfgVal;
 		device_desc.bDeviceClass = USB_CLASS_VENDOR_SPEC;
 		device_desc.idProduct =
 				cpu_to_le16(GS_PRODUCT_ID);
