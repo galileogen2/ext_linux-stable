@@ -6,6 +6,7 @@
  * the Free Software Foundation; version 2 of the License.
  */
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+#include <asm/qrk.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/pci.h>
@@ -18,6 +19,10 @@
 #include <linux/gpio.h>
 #include <linux/irq.h>
 #include <linux/usb/pch_gpio_vbus.h>
+
+static unsigned int enable_msi = 1;
+module_param(enable_msi, uint, S_IRUGO | S_IWUSR);
+MODULE_PARM_DESC(enable_msi, "Enable PCI MSI mode");
 
 /* GPIO port for VBUS detecting */
 static int vbus_gpio_port = -1;		/* GPIO port number (-1:Not used) */
@@ -2788,55 +2793,70 @@ static irqreturn_t pch_udc_isr(int irq, void *pdev)
 {
 	struct pch_udc_dev *dev = (struct pch_udc_dev *) pdev;
 	u32 dev_intr, ep_intr;
-	int i;
+	int i, events = 0;
 
-	dev_intr = pch_udc_read_device_interrupts(dev);
-	ep_intr = pch_udc_read_ep_interrupts(dev);
+	mask_pvm(dev->pdev);
+	do {
+		events = 0;
+		dev_intr = pch_udc_read_device_interrupts(dev);
+		ep_intr = pch_udc_read_ep_interrupts(dev);
 
-	/* For a hot plug, this find that the controller is hung up. */
-	if (dev_intr == ep_intr)
-		if (dev_intr == pch_udc_readl(dev, UDC_DEVCFG_ADDR)) {
-			dev_dbg(&dev->pdev->dev, "UDC: Hung up\n");
-			/* The controller is reset */
-			pch_udc_writel(dev, UDC_SRST, UDC_SRST_ADDR);
-			return IRQ_HANDLED;
-		}
-	if (dev_intr)
-		/* Clear device interrupts */
-		pch_udc_write_device_interrupts(dev, dev_intr);
-	if (ep_intr)
-		/* Clear ep interrupts */
-		pch_udc_write_ep_interrupts(dev, ep_intr);
-	if (!dev_intr && !ep_intr)
-		return IRQ_NONE;
-	spin_lock(&dev->lock);
-	if (dev_intr)
-		pch_udc_dev_isr(dev, dev_intr);
-	if (ep_intr) {
-		pch_udc_read_all_epstatus(dev, ep_intr);
-		/* Process Control In interrupts, if present */
-		if (ep_intr & UDC_EPINT_IN_EP0) {
-			pch_udc_svc_control_in(dev);
-			pch_udc_postsvc_epinters(dev, 0);
-		}
-		/* Process Control Out interrupts, if present */
-		if (ep_intr & UDC_EPINT_OUT_EP0)
-			pch_udc_svc_control_out(dev);
-		/* Process data in end point interrupts */
-		for (i = 1; i < PCH_UDC_USED_EP_NUM; i++) {
-			if (ep_intr & (1 <<  i)) {
-				pch_udc_svc_data_in(dev, i);
-				pch_udc_postsvc_epinters(dev, i);
+		/* For a hot plug, this find that the controller is hung up. */
+		if (dev_intr == ep_intr)
+			if (dev_intr == pch_udc_readl(dev, UDC_DEVCFG_ADDR)) {
+				dev_dbg(&dev->pdev->dev, "UDC: Hung up\n");
+				/* The controller is reset */
+				pch_udc_writel(dev, UDC_SRST, UDC_SRST_ADDR);
+				unmask_pvm(dev->pdev);
+				return IRQ_HANDLED;
 			}
+		if (dev_intr){
+			/* Clear device interrupts */
+			pch_udc_write_device_interrupts(dev, dev_intr);
+			events = 1;
 		}
-		/* Process data out end point interrupts */
-		for (i = UDC_EPINT_OUT_SHIFT + 1; i < (UDC_EPINT_OUT_SHIFT +
-						 PCH_UDC_USED_EP_NUM); i++)
-			if (ep_intr & (1 <<  i))
-				pch_udc_svc_data_out(dev, i -
-							 UDC_EPINT_OUT_SHIFT);
-	}
-	spin_unlock(&dev->lock);
+		if (ep_intr){
+			/* Clear ep interrupts */
+			pch_udc_write_ep_interrupts(dev, ep_intr);
+			events = 1;
+		}
+		if (!dev_intr && !ep_intr){
+			unmask_pvm(dev->pdev);
+			return IRQ_NONE;
+		}
+		spin_lock(&dev->lock);
+		if (dev_intr){
+			pch_udc_dev_isr(dev, dev_intr);
+		}
+		if (ep_intr) {
+			pch_udc_read_all_epstatus(dev, ep_intr);
+			/* Process Control In interrupts, if present */
+			if (ep_intr & UDC_EPINT_IN_EP0) {
+				pch_udc_svc_control_in(dev);
+				pch_udc_postsvc_epinters(dev, 0);
+			}
+			/* Process Control Out interrupts, if present */
+			if (ep_intr & UDC_EPINT_OUT_EP0)
+				pch_udc_svc_control_out(dev);
+			/* Process data in end point interrupts */
+			for (i = 1; i < PCH_UDC_USED_EP_NUM; i++) {
+				if (ep_intr & (1 <<  i)) {
+					pch_udc_svc_data_in(dev, i);
+					pch_udc_postsvc_epinters(dev, i);
+				}
+			}
+			/* Process data out end point interrupts */
+			for (i = UDC_EPINT_OUT_SHIFT + 1;
+				i < (UDC_EPINT_OUT_SHIFT + PCH_UDC_USED_EP_NUM);
+				i++)
+				if (ep_intr & (1 <<  i))
+					pch_udc_svc_data_out(dev,
+						i - UDC_EPINT_OUT_SHIFT);
+		}
+		spin_unlock(&dev->lock);
+	}while(events == 1);
+	unmask_pvm(dev->pdev);
+
 	return IRQ_HANDLED;
 }
 
@@ -3199,6 +3219,12 @@ static int pch_udc_probe(struct pci_dev *pdev,
 		retval = -ENODEV;
 		goto finished;
 	}
+
+	pci_set_master(pdev);
+	if (enable_msi == 1){
+		pci_enable_msi(pdev);
+	}
+
 	if (request_irq(pdev->irq, pch_udc_isr, IRQF_SHARED, KBUILD_MODNAME,
 			dev)) {
 		dev_err(&pdev->dev, "%s: request_irq(%d) fail\n", __func__,
@@ -3209,7 +3235,7 @@ static int pch_udc_probe(struct pci_dev *pdev,
 	dev->irq = pdev->irq;
 	dev->irq_registered = 1;
 
-	pci_set_master(pdev);
+
 	pci_try_set_mwi(pdev);
 
 	/* device struct setup */
