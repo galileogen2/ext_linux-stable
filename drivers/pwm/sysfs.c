@@ -16,6 +16,7 @@
  * GNU General Public License for more details.
  */
 
+#include <linux/export.h>
 #include <linux/device.h>
 #include <linux/mutex.h>
 #include <linux/err.h>
