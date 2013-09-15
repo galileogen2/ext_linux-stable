@@ -114,6 +114,15 @@ static unsigned n_ports = 1;
 module_param(n_ports, uint, 0);
 MODULE_PARM_DESC(n_ports, "number of ports to create, default=1");
 
+static __u16 vendor = GS_VENDOR_ID;
+module_param(vendor, ushort, 0);
+MODULE_PARM_DESC(vendor, "User specified vendor ID (default="
+		__MODULE_STRING(GS_VENDOR_ID)")");
+
+static __u16 product = 0;
+module_param(product, ushort, 0);
+MODULE_PARM_DESC(product, "User specified product ID");
+
 /*-------------------------------------------------------------------------*/
 
 static struct usb_configuration serial_config_driver = {
@@ -189,6 +198,14 @@ static int __init gs_bind(struct usb_composite_dev *cdev)
 	device_desc.iProduct = strings_dev[USB_GADGET_PRODUCT_IDX].id;
 	status = strings_dev[STRING_DESCRIPTION_IDX].id;
 	serial_config_driver.iConfiguration = status;
+
+	/* Allow command line over-ride to set specific vendor/device id */
+	if (vendor != GS_VENDOR_ID)
+		device_desc.idVendor = cpu_to_le16(vendor);
+	if (product != 0)
+		device_desc.idProduct = cpu_to_le16(product);
+	pr_info("g_serial: Vendor 0x%04x Product 0x%04x\n",
+		device_desc.idVendor, device_desc.idProduct);
 
 	if (gadget_is_otg(cdev->gadget)) {
 		serial_config_driver.descriptors = otg_desc;
