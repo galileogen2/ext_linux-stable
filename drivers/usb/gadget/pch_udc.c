@@ -2872,7 +2872,7 @@ static irqreturn_t pch_udc_isr(int irq, void *pdev)
 {
 	struct pch_udc_dev *dev = (struct pch_udc_dev *) pdev;
 	u32 dev_intr, ep_intr;
-	int i, events = 0;
+	int i, events = 0, count = 0;
 
 	mask_pvm(dev->pdev);
 	do {
@@ -2893,15 +2893,20 @@ static irqreturn_t pch_udc_isr(int irq, void *pdev)
 			/* Clear device interrupts */
 			pch_udc_write_device_interrupts(dev, dev_intr);
 			events = 1;
+			count = 1;
 		}
 		if (ep_intr) {
 			/* Clear ep interrupts */
 			pch_udc_write_ep_interrupts(dev, ep_intr);
 			events = 1;
+			count = 1;
 		}
 		if (!dev_intr && !ep_intr) {
 			unmask_pvm(dev->pdev);
-			return IRQ_NONE;
+			if (count)
+				return IRQ_HANDLED;
+			else
+				return IRQ_NONE;
 		}
 		spin_lock(&dev->lock);
 		if (dev_intr)
