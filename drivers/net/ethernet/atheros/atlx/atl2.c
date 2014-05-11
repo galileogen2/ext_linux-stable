@@ -2107,7 +2107,7 @@ static const struct ethtool_ops atl2_ethtool_ops = {
 
 static void atl2_set_ethtool_ops(struct net_device *netdev)
 {
-	SET_ETHTOOL_OPS(netdev, &atl2_ethtool_ops);
+	netdev->ethtool_ops =  &atl2_ethtool_ops;
 }
 
 #define LBYTESWAP(a)  ((((a) & 0x00ff00ff) << 8) | \

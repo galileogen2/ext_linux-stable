@@ -2768,7 +2768,7 @@ static int rtl8152_probe(struct usb_interface *intf,
 
 	netdev->features |= NETIF_F_IP_CSUM;
 	netdev->hw_features = NETIF_F_IP_CSUM;
-	SET_ETHTOOL_OPS(netdev, &ops);
+	netdev->ethtool_ops = &ops;
 
 	tp->mii.dev = netdev;
 	tp->mii.mdio_read = read_mii_word;
