@@ -317,7 +317,6 @@ err_mem:
 
 static int timbgpio_remove(struct platform_device *pdev)
 {
-	int err;
 	struct timbgpio_platform_data *pdata = dev_get_platdata(&pdev->dev);
 	struct timbgpio *tgpio = platform_get_drvdata(pdev);
 	struct resource *iomem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -334,9 +333,7 @@ static int timbgpio_remove(struct platform_device *pdev)
 		irq_set_handler_data(irq, NULL);
 	}
 
-	err = gpiochip_remove(&tgpio->gpio);
-	if (err)
-		printk(KERN_ERR DRIVER_NAME": failed to remove gpio_chip\n");
+	gpiochip_remove(&tgpio->gpio);
 
 	iounmap(tgpio->membase);
 	release_mem_region(iomem->start, resource_size(iomem));
