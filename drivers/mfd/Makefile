@@ -135,6 +135,7 @@ obj-$(CONFIG_AB8500_CORE)	+= ab8500-core.o ab8500-sysctrl.o
 obj-$(CONFIG_MFD_TIMBERDALE)    += timberdale.o
 obj-$(CONFIG_PMIC_ADP5520)	+= adp5520.o
 obj-$(CONFIG_MFD_KEMPLD)	+= kempld-core.o
+obj-$(CONFIG_MFD_INTEL_QUARK_I2C_GPIO)	+= intel_quark_i2c_gpio.o
 obj-$(CONFIG_CY8C9540A)		+= cy8c9540a.o
 pca9685-objs			:= pca9685-core.o pca9685-gpio.o pca9685-pwm.o
 obj-$(CONFIG_MFD_PCA9685)	+= pca9685.o
