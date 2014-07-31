@@ -239,7 +239,6 @@ duplicate:
 	put_j1939_segment(parent);
 	if (return_existing)
 		return dut;
-	ecu_alert(ecu, "duplicate name\n");
 	put_j1939_ecu(ecu);
 	return ERR_PTR(-EEXIST);
 }
