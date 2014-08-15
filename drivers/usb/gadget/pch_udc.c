@@ -3096,7 +3096,12 @@ static void pch_udc_remove(struct pci_dev *pdev)
 	pch_udc_exit(dev);
 
 	if (dev->irq_registered)
+		{
 		free_irq(pdev->irq, dev);
+		if (enable_msi){
+			pci_disable_msi(pdev);
+		}
+	}
 	if (dev->base_addr)
 		iounmap(dev->base_addr);
 	if (dev->mem_region)
