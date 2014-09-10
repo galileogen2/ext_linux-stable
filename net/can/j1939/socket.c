@@ -815,8 +815,10 @@ static int j1939sk_sendmsg(struct kiocb *iocb, struct socket *sock,
 		if (addr->can_addr.j1939.name) {
 			ecu = j1939_ecu_find_by_name(addr->can_addr.j1939.name,
 					ifindex);
-			if (!ecu)
-				return -EADDRNOTAVAIL;
+			if (!ecu) {
+				ret = -EADDRNOTAVAIL;
+				goto free_skb;
+			}
 			skb_cb->dst.name = ecu->name;
 			skb_cb->dst.addr = ecu->sa;
 			put_j1939_ecu(ecu);
