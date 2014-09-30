@@ -313,7 +313,7 @@ gpios:
 		goto end;
 	}
 
-	probed_i2c_cypress.irq = gpio_to_irq(GPIO_CYPRESS_INT_S0);
+	probed_i2c_cypress.irq = gpio_to_irq(GPIO_CYPRESS_INT_S3);
 
 	gpios_done = 1;
 
