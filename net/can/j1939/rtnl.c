@@ -158,6 +158,9 @@ static int j1939rtnl_fill_ifaddr(struct sk_buff *skb, int ifindex,
 	ifm->ifa_index = ifindex;
 
 	nla = nla_nest_start(skb, IFA_LOCAL);
+	if (!nla)
+		goto nla_failure;
+
 	if (j1939_address_is_unicast(addr))
 		if (nla_put_u8(skb, IFA_J1939_ADDR, addr) < 0)
 			goto nla_failure;
@@ -167,6 +170,7 @@ static int j1939rtnl_fill_ifaddr(struct sk_buff *skb, int ifindex,
 	nla_nest_end(skb, nla);
 
 	return nlmsg_end(skb, nlh);
+
 nla_failure:
        nlmsg_cancel(skb, nlh);
        return -EMSGSIZE;
