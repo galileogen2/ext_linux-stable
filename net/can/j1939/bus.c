@@ -508,6 +508,9 @@ void j1939bus_module_exit(void)
 		jseg = list_first_entry(&segments.list,
 				struct j1939_segment, flist);
 		netdev = dev_get_by_index(&init_net, jseg->ifindex);
+		if (!netdev)
+			continue;
+		netdev_dbg(netdev, "detaching from J1939 segment \n");
 		spin_unlock_bh(&segments.lock);
 		j1939_segment_detach(netdev);
 		dev_put(netdev);
