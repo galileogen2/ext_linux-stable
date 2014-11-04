@@ -607,8 +607,10 @@ static struct slcan_channel *slc_alloc(dev_t line)
 		sprintf(name, "slcan%d", i * muxnetdevs + j);
 
 		dev = alloc_netdev(sizeof(*sl_dev), name, slc_setup);
-		if (!dev)
+		if (!dev) {
+			kfree(sl);
 			return NULL;
+		}
 
 		dev->base_addr  = i * muxnetdevs + j;
 		sl_dev = netdev_priv(dev);
