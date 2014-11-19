@@ -18,7 +18,7 @@
 #include <linux/dmi.h>
 #include "pci-quirks.h"
 #include "xhci-ext-caps.h"
-
+#include <asm/iosf_mbi.h>
 
 #define UHCI_USBLEGSUP		0xc0		/* legacy support */
 #define UHCI_USBCMD		0		/* command register */
@@ -836,7 +836,6 @@ static int handshake(void __iomem *ptr, u32 mask, u32 done,
 	return -ETIMEDOUT;
 }
 
-#define PCI_DEVICE_ID_INTEL_QUARK_X1000_SOC		0x0939
 bool usb_is_intel_qrk(struct pci_dev *pdev)
 {
 	return pdev->vendor == PCI_VENDOR_ID_INTEL &&
@@ -1095,6 +1094,47 @@ hc_init:
 
 	iounmap(base);
 }
+#ifdef CONFIG_X86_INTEL_QUARK
+/**
+ * quirk_qrk_usb_phy_set_squelch
+ *
+ * Uses side band access on quark to access USB PHY registers where the
+ * squelch value can be adjusted.
+ * @threshold: ref to millivolts to set the squelch to there are just a few
+ *             values available to use in quark
+ *
+ * QRK_SQUELCH_DEFAULT	0 apply default of 112.5 mV
+ * QRK_SQUELCH_LO	1 apply low  of 100 mV
+ * QRK_SQUELCH_HI	2 apply high of 125 mV
+ */
+#define USB2COMPBG	0x7F04	/* PHY register over side band */
+#define HS_SQ_REF_POS   13	/* bit position for squelch */
+#define HS_SQ_REF_MASK  (3 << HS_SQ_REF_POS) /* bit mask for squelch */
+
+#define USBPHY_SB_READ	0x06	/* Sideband read command  */
+#define USBPHY_SB_WRITE	0x07	/* Sideband write command */
+#define SB_ID_USBPHY	0x14	/* Port of USB PHY */
+
+void quirk_qrk_usb_phy_set_squelch(u32 threshold)
+{
+	u32 regval, regnew;
+	iosf_mbi_read(SB_ID_USBPHY, USBPHY_SB_READ, USB2COMPBG,
+								 &regval);
+	regnew = regval & ~HS_SQ_REF_MASK;
+	regnew |= ((threshold<<HS_SQ_REF_POS) & HS_SQ_REF_MASK);
+	iosf_mbi_write(SB_ID_USBPHY, USBPHY_SB_WRITE, USB2COMPBG,
+								regnew);
+	pr_info("USB PHY squelch ref adjusted from %8x to %8x\n",
+						regval, regnew);
+}
+#else
+inline void quirk_qrk_usb_phy_set_squelch(u32 threshold)
+{
+}
+#endif
+EXPORT_SYMBOL_GPL(quirk_qrk_usb_phy_set_squelch);
+
+
 
 static void quirk_usb_early_handoff(struct pci_dev *pdev)
 {
