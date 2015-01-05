@@ -815,6 +815,7 @@ static void sc16is7xx_config_rs485(struct uart_port *port,
 				   struct serial_rs485 *rs485)
 {
 	struct sc16is7xx_one *one = to_sc16is7xx_one(port, port);
+	u8 val;
 
 	one->rs485 = *rs485;
 
@@ -827,6 +828,15 @@ static void sc16is7xx_config_rs485(struct uart_port *port,
 				      SC16IS7XX_EFCR_AUTO_RS485_BIT,
 				      0);
 	}
+	/* Configure auto-RS485 RTS output inversion */
+	if ((!!(one->rs485.flags & SER_RS485_RTS_ON_SEND)) ==
+		(!!(one->rs485.flags & SER_RS485_RTS_AFTER_SEND)))
+		dev_warn(port->dev, "SER_RS485_RTS_ON_SEND and SER_RS485_RTS_AFTER_SEND flags have the same value!");
+	val = one->rs485.flags & SER_RS485_RTS_ON_SEND ?
+		SC16IS7XX_EFCR_RTS_INVERT_BIT : 0;
+	sc16is7xx_port_update(port, SC16IS7XX_EFCR_REG,
+			SC16IS7XX_EFCR_RTS_INVERT_BIT,
+			val);
 }
 #endif
 
