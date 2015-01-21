@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011 LAPIS Semiconductor Co., Ltd.
+ * Copyright (C) 2015 Intel Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -231,7 +232,7 @@ static int vbus_gpio_port = -1;		/* GPIO port number (-1:Not used) */
 
 /**
  * Bit masks used to make sure the RO bits are saved as 0 thus restore will
- * set them to 0, as specified in the Quak data-sheet.
+ * set them to 0, as specified in the Quark data-sheet.
  */
 #define D_CFG_UDC_REG_MASK		0x0FFFBF
 #define D_CTRL_UDC_REG_MASK		0xFFFF3FFD
@@ -2896,7 +2897,7 @@ static irqreturn_t pch_udc_isr(int irq, void *pdev)
 			count = 1;
 		}
 		if (ep_intr) {
-			/* Clear ep interrupts */
+			/* Clear EP interrupts */
 			pch_udc_write_ep_interrupts(dev, ep_intr);
 			events = 1;
 			count = 1;
@@ -3259,7 +3260,7 @@ static int pch_udc_probe(struct pci_dev *pdev,
 	struct pch_udc_platform_data *pdata = NULL;
 	pdata = get_pch_udc_platform_data();
 	if (NULL == pdata) {
-		dev_info(&pdev->dev, "Platform device not registered yet... probe defered!\n");
+		dev_info(&pdev->dev, "Platform device not registered yet... probe deferred!\n");
 		retval = -EPROBE_DEFER;
 		goto finished;
 	}
