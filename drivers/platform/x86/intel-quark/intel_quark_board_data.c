@@ -120,6 +120,14 @@ static struct platform_device bsp_data[] = {
 		.name	= "KipsBay",
 		.id	= -1,
 	},
+	{
+		.name	= "RelianceCreek",
+		.id	= -1,
+	},
+	{
+		.name	= "RelianceCreekSPU",
+		.id	= -1,
+	},
 };
 
 /**
