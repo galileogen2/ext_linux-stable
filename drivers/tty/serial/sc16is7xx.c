@@ -496,9 +496,10 @@ static void sc16is7xx_handle_rx(struct uart_port *port, unsigned int rxlen,
 			s->buf[0] = sc16is7xx_port_read(port, SC16IS7XX_RHR_REG);
 			bytes_read = 1;
 		} else {
+			u8 reg = SC16IS7XX_RHR_REG << SC16IS7XX_REG_SHIFT |
+				port->line;
 			regcache_cache_bypass(s->regmap, true);
-			regmap_raw_read(s->regmap, SC16IS7XX_RHR_REG,
-					s->buf, rxlen);
+			regmap_raw_read(s->regmap, reg,	s->buf, rxlen);
 			regcache_cache_bypass(s->regmap, false);
 			bytes_read = rxlen;
 		}
@@ -567,6 +568,8 @@ static void sc16is7xx_handle_tx(struct uart_port *port)
 	/* Get length of data pending in circular buffer */
 	to_send = uart_circ_chars_pending(xmit);
 	if (likely(to_send)) {
+		u8 reg = SC16IS7XX_THR_REG << SC16IS7XX_REG_SHIFT | port->line;
+
 		/* Limit to size of TX FIFO */
 		txlen = sc16is7xx_port_read(port, SC16IS7XX_TXLVL_REG);
 		to_send = (to_send > txlen) ? txlen : to_send;
@@ -580,7 +583,7 @@ static void sc16is7xx_handle_tx(struct uart_port *port)
 			xmit->tail = (xmit->tail + 1) & (UART_XMIT_SIZE - 1);
 		}
 		regcache_cache_bypass(s->regmap, true);
-		regmap_raw_write(s->regmap, SC16IS7XX_THR_REG, s->buf, to_send);
+		regmap_raw_write(s->regmap, reg, s->buf, to_send);
 		regcache_cache_bypass(s->regmap, false);
 	}
 
