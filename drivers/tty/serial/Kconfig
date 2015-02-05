@@ -1162,13 +1162,32 @@ config SERIAL_SCCNXP_CONSOLE
 
 config SERIAL_SC16IS7XX
 	tristate "SC16IS7xx serial support"
-	depends on I2C
+	depends on (I2C || SPI_MASTER)
 	select SERIAL_CORE
-	select REGMAP_I2C if I2C
 	help
 	  This selects support for SC16IS7xx serial ports.
 	  Supported ICs are SC16IS740, SC16IS741, SC16IS750, SC16IS752,
 	  SC16IS760 and SC16IS762.
+
+config SERIAL_SC16IS7XX_SPI
+	tristate "support SPI bus connection"
+	depends on SERIAL_SC16IS7XX && SPI_MASTER
+	select REGMAP_SPI
+	help
+	  Say Y here if you have a SC16IS7XX UART hooked up to a SPI bus.
+
+	  To compile this driver as a module, choose M here;
+	  the module will be called sc16is7xx-spi.
+
+config SERIAL_SC16IS7XX_I2C
+	tristate "support I2C bus connection"
+	depends on SERIAL_SC16IS7XX && I2C
+	select REGMAP_I2C
+	help
+	  Say Y here if you have a SC16IS7XX UART hooked up to an I2C bus.
+
+	  To compile this driver as a module, choose M here;
+	  the module will be called sc16is7xx-i2c
 
 config SERIAL_BFIN_SPORT
 	tristate "Blackfin SPORT emulate UART"

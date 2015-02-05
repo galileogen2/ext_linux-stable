@@ -16,7 +16,6 @@
 #include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/gpio.h>
-#include <linux/i2c.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
@@ -27,7 +26,8 @@
 #include <linux/tty_flip.h>
 #include <linux/uaccess.h>
 
-#define SC16IS7XX_NAME			"sc16is7xx"
+#include "sc16is7xx.h"
+
 
 /* SC16IS7XX register definitions */
 #define SC16IS7XX_RHR_REG		(0x00) /* RX FIFO */
@@ -292,13 +292,7 @@
 
 /* Misc definitions */
 #define SC16IS7XX_FIFO_SIZE		(64)
-#define SC16IS7XX_REG_SHIFT		2
 
-struct sc16is7xx_devtype {
-	char	name[10];
-	int	nr_gpio;
-	int	nr_uart;
-};
 
 struct sc16is7xx_one {
 	struct uart_port		port;
@@ -359,36 +353,6 @@ static void sc16is7xx_power(struct uart_port *port, int on)
 			      SC16IS7XX_IER_SLEEP_BIT,
 			      on ? 0 : SC16IS7XX_IER_SLEEP_BIT);
 }
-
-static struct sc16is7xx_devtype sc16is74x_devtype = {
-	.name		= "SC16IS74X",
-	.nr_gpio	= 0,
-	.nr_uart	= 1,
-};
-
-static struct sc16is7xx_devtype sc16is750_devtype = {
-	.name		= "SC16IS750",
-	.nr_gpio	= 8,
-	.nr_uart	= 1,
-};
-
-static struct sc16is7xx_devtype sc16is752_devtype = {
-	.name		= "SC16IS752",
-	.nr_gpio	= 8,
-	.nr_uart	= 2,
-};
-
-static struct sc16is7xx_devtype sc16is760_devtype = {
-	.name		= "SC16IS760",
-	.nr_gpio	= 8,
-	.nr_uart	= 1,
-};
-
-static struct sc16is7xx_devtype sc16is762_devtype = {
-	.name		= "SC16IS762",
-	.nr_gpio	= 8,
-	.nr_uart	= 2,
-};
 
 static bool sc16is7xx_regmap_volatile(struct device *dev, unsigned int reg)
 {
@@ -546,7 +510,7 @@ static void sc16is7xx_handle_rx(struct uart_port *port, unsigned int rxlen,
 		rxlen -= bytes_read;
 	}
 
-	tty_flip_buffer_push(&port->state->port.tty);
+	tty_flip_buffer_push(port->state->port.tty);
 }
 
 static void sc16is7xx_handle_tx(struct uart_port *port)
@@ -1059,12 +1023,12 @@ static int sc16is7xx_gpio_direction_output(struct gpio_chip *chip,
 }
 #endif
 
-static int sc16is7xx_probe(struct device *dev,
+int sc16is7xx_probe(struct device *dev,
 			   struct sc16is7xx_devtype *devtype,
 			   struct regmap *regmap, int irq, unsigned long flags)
 {
 	unsigned long freq, *pfreq = dev_get_platdata(dev);
-	struct clk *clk;
+	struct clk *clk = NULL;
 	int i, ret;
 	struct sc16is7xx_port *s;
 
@@ -1081,7 +1045,7 @@ static int sc16is7xx_probe(struct device *dev,
 	}
 
 	clk = devm_clk_get(dev, NULL);
-	if (IS_ERR(clk)) {
+	if (IS_ERR_OR_NULL(clk)) {
 		if (pfreq)
 			freq = *pfreq;
 		else
@@ -1174,8 +1138,9 @@ out_clk:
 
 	return ret;
 }
+EXPORT_SYMBOL(sc16is7xx_probe);
 
-static int sc16is7xx_remove(struct device *dev)
+int sc16is7xx_remove(struct device *dev)
 {
 	struct sc16is7xx_port *s = dev_get_drvdata(dev);
 	int i, ret = 0;
@@ -1202,78 +1167,22 @@ static int sc16is7xx_remove(struct device *dev)
 
 	return ret;
 }
+EXPORT_SYMBOL(sc16is7xx_remove);
 
-static const struct of_device_id __maybe_unused sc16is7xx_dt_ids[] = {
-	{ .compatible = "nxp,sc16is740",	.data = &sc16is74x_devtype, },
-	{ .compatible = "nxp,sc16is741",	.data = &sc16is74x_devtype, },
-	{ .compatible = "nxp,sc16is750",	.data = &sc16is750_devtype, },
-	{ .compatible = "nxp,sc16is752",	.data = &sc16is752_devtype, },
-	{ .compatible = "nxp,sc16is760",	.data = &sc16is760_devtype, },
-	{ .compatible = "nxp,sc16is762",	.data = &sc16is762_devtype, },
-	{ }
-};
-MODULE_DEVICE_TABLE(of, sc16is7xx_dt_ids);
-
-static struct regmap_config regcfg = {
-	.reg_bits = 7,
-	.pad_bits = 1,
-	.val_bits = 8,
-	.cache_type = REGCACHE_RBTREE,
-	.volatile_reg = sc16is7xx_regmap_volatile,
-	.precious_reg = sc16is7xx_regmap_precious,
-};
-
-static int sc16is7xx_i2c_probe(struct i2c_client *i2c,
-			       const struct i2c_device_id *id)
+void sc16is7xx_regmap_config_init(struct regmap_config *regcfg, int nr_uart)
 {
-	struct sc16is7xx_devtype *devtype;
-	unsigned long flags = 0;
-	struct regmap *regmap;
-
-	if (i2c->dev.of_node) {
-		const struct of_device_id *of_id =
-				of_match_device(sc16is7xx_dt_ids, &i2c->dev);
-
-		devtype = (struct sc16is7xx_devtype *)of_id->data;
-	} else {
-		devtype = (struct sc16is7xx_devtype *)id->driver_data;
-		flags = IRQF_TRIGGER_FALLING;
-	}
-
-	regcfg.max_register = (0xf << SC16IS7XX_REG_SHIFT) |
-			      (devtype->nr_uart - 1);
-	regmap = devm_regmap_init_i2c(i2c, &regcfg);
-
-	return sc16is7xx_probe(&i2c->dev, devtype, regmap, i2c->irq, flags);
+	static struct regmap_config template = {
+		.reg_bits = 7,
+		.pad_bits = 1,
+		.val_bits = 8,
+		.cache_type = REGCACHE_RBTREE,
+		.volatile_reg = sc16is7xx_regmap_volatile,
+		.precious_reg = sc16is7xx_regmap_precious,
+	};
+	memcpy(regcfg, &template, sizeof(*regcfg));
+	regcfg->max_register = ((0x0F << SC16IS7XX_REG_SHIFT) | (nr_uart - 1));
 }
-
-static int sc16is7xx_i2c_remove(struct i2c_client *client)
-{
-	return sc16is7xx_remove(&client->dev);
-}
-
-static const struct i2c_device_id sc16is7xx_i2c_id_table[] = {
-	{ "sc16is74x",	(kernel_ulong_t)&sc16is74x_devtype, },
-	{ "sc16is750",	(kernel_ulong_t)&sc16is750_devtype, },
-	{ "sc16is752",	(kernel_ulong_t)&sc16is752_devtype, },
-	{ "sc16is760",	(kernel_ulong_t)&sc16is760_devtype, },
-	{ "sc16is762",	(kernel_ulong_t)&sc16is762_devtype, },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, sc16is7xx_i2c_id_table);
-
-static struct i2c_driver sc16is7xx_i2c_uart_driver = {
-	.driver = {
-		.name		= SC16IS7XX_NAME,
-		.owner		= THIS_MODULE,
-		.of_match_table	= of_match_ptr(sc16is7xx_dt_ids),
-	},
-	.probe		= sc16is7xx_i2c_probe,
-	.remove		= sc16is7xx_i2c_remove,
-	.id_table	= sc16is7xx_i2c_id_table,
-};
-module_i2c_driver(sc16is7xx_i2c_uart_driver);
-MODULE_ALIAS("i2c:sc16is7xx");
+EXPORT_SYMBOL(sc16is7xx_regmap_config_init);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Jon Ringle <jringle@gridpoint.com>");
