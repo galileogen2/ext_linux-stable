@@ -318,7 +318,7 @@ struct sc16is7xx_port {
 	unsigned int			base_port;
 };
 
-#define to_sc16is7xx_one(p,e)	((container_of((p), struct sc16is7xx_one, e)))
+#define to_sc16is7xx_one(p, e)	((container_of((p), struct sc16is7xx_one, e)))
 
 /**
  * Keep track of registered ports as a global variable to avoid clash if we
@@ -469,7 +469,8 @@ static void sc16is7xx_handle_rx(struct uart_port *port, unsigned int rxlen,
 			lsr = 0;
 
 		if (read_lsr) {
-			s->buf[0] = sc16is7xx_port_read(port, SC16IS7XX_RHR_REG);
+			s->buf[0] = sc16is7xx_port_read(port,
+							SC16IS7XX_RHR_REG);
 			bytes_read = 1;
 		} else {
 			u8 reg = (SC16IS7XX_RHR_REG << SC16IS7XX_REG_SHIFT) |
@@ -631,7 +632,7 @@ static void sc16is7xx_wq_proc(struct work_struct *ws)
 	mutex_unlock(&s->mutex);
 }
 
-static void sc16is7xx_stop_tx(struct uart_port* port)
+static void sc16is7xx_stop_tx(struct uart_port *port)
 {
 	struct sc16is7xx_one *one = to_sc16is7xx_one(port, port);
 	struct circ_buf *xmit = &one->port.state->xmit;
@@ -653,7 +654,7 @@ static void sc16is7xx_stop_tx(struct uart_port* port)
 			      0);
 }
 
-static void sc16is7xx_stop_rx(struct uart_port* port)
+static void sc16is7xx_stop_rx(struct uart_port *port)
 {
 	struct sc16is7xx_one *one = to_sc16is7xx_one(port, port);
 
