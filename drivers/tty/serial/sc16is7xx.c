@@ -457,13 +457,15 @@ static void sc16is7xx_handle_rx(struct uart_port *port, unsigned int rxlen,
 		port->icount.buf_overrun++;
 		/* Ensure sanity of RX level */
 		rxlen = sizeof(s->buf);
+		read_lsr = true;
 	}
 
 	while (rxlen) {
 		/* Only read lsr if there are possible errors in FIFO */
 		if (read_lsr) {
 			lsr = sc16is7xx_port_read(port, SC16IS7XX_LSR_REG);
-			if (!(lsr & SC16IS7XX_LSR_FIFOE_BIT))
+			if (!(lsr & (SC16IS7XX_LSR_FIFOE_BIT |
+				     SC16IS7XX_LSR_OE_BIT)))
 				read_lsr = false; /* No errors left in FIFO */
 		} else
 			lsr = 0;
@@ -521,6 +523,15 @@ static void sc16is7xx_handle_rx(struct uart_port *port, unsigned int rxlen,
 					 flag);
 		}
 		rxlen -= bytes_read;
+
+		if (unlikely(lsr & SC16IS7XX_LSR_OE_BIT)) {
+			/* Reset Rx FIFO to clear overrun status */
+			dev_warn(port->dev, "Resetting RX FIFO due to overrun");
+			sc16is7xx_port_update(port, SC16IS7XX_FCR_REG,
+					      SC16IS7XX_FCR_RXRESET_BIT,
+					      SC16IS7XX_FCR_RXRESET_BIT);
+			break;
+		}
 	}
 
 	tty_flip_buffer_push(port->state->port.tty);
