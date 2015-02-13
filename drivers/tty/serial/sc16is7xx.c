@@ -1054,10 +1054,15 @@ static int sc16is7xx_gpio_direction_output(struct gpio_chip *chip,
 						gpio);
 	struct uart_port *port = &s->p[0].port;
 
-	sc16is7xx_port_update(port, SC16IS7XX_IOSTATE_REG, BIT(offset),
-			      val ? BIT(offset) : 0);
+	/* Writes to IOState bits are effectively ignored when the corresponding
+	 * bits in IODir are 0, so IODir is updated first
+	 *
+	 * i.e. A short delay may occur before the output level is set correctly
+	 */
 	sc16is7xx_port_update(port, SC16IS7XX_IODIR_REG, BIT(offset),
 			      BIT(offset));
+	sc16is7xx_port_update(port, SC16IS7XX_IOSTATE_REG, BIT(offset),
+			      val ? BIT(offset) : 0);
 
 	return 0;
 }
