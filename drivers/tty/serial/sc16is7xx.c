@@ -192,7 +192,7 @@
 						  * or (IO6)
 						  * - only on 75x/76x
 						  */
-#define SC16IS7XX_MSR_CTS_BIT		(1 << 0) /* CTS */
+#define SC16IS7XX_MSR_CTS_BIT		(1 << 4) /* CTS */
 #define SC16IS7XX_MSR_DSR_BIT		(1 << 1) /* DSR (IO4)
 						  * - only on 75x/76x
 						  */
@@ -416,8 +416,9 @@ static int sc16is7xx_set_baud(struct uart_port *port, int baud)
 
 	/* Enable enhanced features */
 	regcache_cache_bypass(s->regmap, true);
-	sc16is7xx_port_write(port, SC16IS7XX_EFR_REG,
-			     SC16IS7XX_EFR_ENABLE_BIT);
+	sc16is7xx_port_update(port, SC16IS7XX_EFR_REG,
+			      SC16IS7XX_EFR_ENABLE_BIT,
+			      SC16IS7XX_EFR_ENABLE_BIT);
 	regcache_cache_bypass(s->regmap, false);
 
 	/* Put LCR back to the normal mode */
@@ -605,7 +606,8 @@ static void sc16is7xx_port_irq(struct sc16is7xx_port *s, int portno)
 
 		case SC16IS7XX_IIR_CTSRTS_SRC:
 			msr = sc16is7xx_port_read(port, SC16IS7XX_MSR_REG);
-			uart_handle_cts_change(port,
+			if (msr & SC16IS7XX_MSR_DCTS_BIT)
+				uart_handle_cts_change(port,
 					       !!(msr & SC16IS7XX_MSR_CTS_BIT));
 			break;
 		case SC16IS7XX_IIR_THRI_SRC:
@@ -702,9 +704,9 @@ static unsigned int sc16is7xx_tx_empty(struct uart_port *port)
 static unsigned int sc16is7xx_get_mctrl(struct uart_port *port)
 {
 	/* DCD and DSR are not wired and CTS/RTS is handled automatically
-	 * so just indicate DSR and CAR asserted
+	 * so just indicate DSR and CAR and CTS asserted
 	 */
-	return TIOCM_DSR | TIOCM_CAR;
+	return TIOCM_DSR | TIOCM_CAR | TIOCM_CTS;
 }
 
 static void sc16is7xx_md_proc(struct work_struct *ws)
@@ -803,8 +805,12 @@ static void sc16is7xx_set_termios(struct uart_port *port,
 		flow |= SC16IS7XX_EFR_SWFLOW3_BIT;
 	if (termios->c_iflag & IXOFF)
 		flow |= SC16IS7XX_EFR_SWFLOW1_BIT;
-
-	sc16is7xx_port_write(port, SC16IS7XX_EFR_REG, flow);
+	sc16is7xx_port_update(port, SC16IS7XX_EFR_REG,
+			      SC16IS7XX_EFR_AUTOCTS_BIT |
+			      SC16IS7XX_EFR_AUTORTS_BIT |
+			      SC16IS7XX_EFR_SWFLOW3_BIT |
+			      SC16IS7XX_EFR_SWFLOW1_BIT,
+			      flow);
 	regcache_cache_bypass(s->regmap, false);
 
 	/* Update LCR register */
@@ -912,9 +918,9 @@ static int sc16is7xx_startup(struct uart_port *port)
 			      SC16IS7XX_MCR_TCRTLR_BIT);
 
 	/* Configure flow control levels */
-	/* Flow control halt level 48, resume level 24 */
+	/* Flow control halt level 48, resume level 16 */
 	sc16is7xx_port_write(port, SC16IS7XX_TCR_REG,
-			     SC16IS7XX_TCR_RX_RESUME(24) |
+			     SC16IS7XX_TCR_RX_RESUME(16) |
 			     SC16IS7XX_TCR_RX_HALT(48));
 
 	regcache_cache_bypass(s->regmap, false);
@@ -928,9 +934,8 @@ static int sc16is7xx_startup(struct uart_port *port)
 			      SC16IS7XX_EFCR_TXDISABLE_BIT,
 			      0);
 
-	/* Enable RX, TX, CTS change interrupts */
-	val = SC16IS7XX_IER_RDI_BIT | SC16IS7XX_IER_THRI_BIT |
-	      SC16IS7XX_IER_CTSI_BIT;
+	/* Enable RX, TX interrupts */
+	val = SC16IS7XX_IER_RDI_BIT | SC16IS7XX_IER_THRI_BIT;
 	sc16is7xx_port_write(port, SC16IS7XX_IER_REG, val);
 
 	return 0;
