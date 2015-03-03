@@ -17,6 +17,7 @@
 #include <linux/usb/gadget.h>
 #include <linux/gpio.h>
 #include <linux/irq.h>
+#include <linux/usb/pch_gpio_vbus.h>
 
 /* GPIO port for VBUS detecting */
 static int vbus_gpio_port = -1;		/* GPIO port number (-1:Not used) */
@@ -3177,6 +3178,22 @@ static int pch_udc_probe(struct pci_dev *pdev,
 		retval = -ENODEV;
 		goto finished;
 	}
+
+	/* If the driver runs on a HW platform which supports GPIO VBUS sensing
+	 * and the BSP layer initialises the platform data structure, get it
+	 * through pch-gpio-vbus driver */
+#ifdef CONFIG_USB_EG20T_GPIO_VBUS
+	dev_info(&pdev->dev, "GPIO VBUS support present!\n");
+	struct pch_udc_platform_data *pdata = NULL;
+	pdata = get_pch_udc_platform_data();
+	if (NULL == pdata) {
+		dev_info(&pdev->dev, "Platform device not registered yet... probe defered!\n");
+		retval = -EPROBE_DEFER;
+		goto finished;
+	}
+	vbus_gpio_port = pdata->vbus_gpio_port;
+#endif
+
 	/* initialize the hardware */
 	if (pch_udc_pcd_init(dev)) {
 		retval = -ENODEV;

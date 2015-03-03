@@ -467,6 +467,20 @@ config USB_EG20T
 	  ML7213/ML7831 is completely compatible for Intel EG20T PCH.
 
 	  This driver can be used with Intel's Quark X1000 SOC platform
+
+config USB_EG20T_GPIO_VBUS
+	tristate "USB UDC Platform Data"
+	depends on USB_EG20T
+	help
+	  Select this option only and if you know for sure your Hardware
+	  platform supports GPIO VBUS sensing.
+	  Make sure your BSP initialises the pch-udc platform data and creates
+	  the associated platform device, otherwise the USB_EG20T driver is
+	  never going to be loaded.
+
+	  If you aren't absolute sure about GPIO VBUS support on your Hardware
+	  platform, don't select this module.
+
 #
 # LAST -- dummy/emulated controller
 #
