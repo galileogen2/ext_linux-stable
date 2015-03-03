@@ -30,6 +30,7 @@
 #include <linux/spi/spi.h>
 #include <linux/i2c/pcf857x.h>
 #include <linux/platform_data/tpm_i2c_infenion.h>
+#include <linux/platform_data/pch_udc.h>
 
 #define DRIVER_NAME		"RelianceCreek"
 #define GPIO_RESTRICT_NAME_NC	"qrk-gpio-restrict-nc"
@@ -43,6 +44,21 @@
 #define GPIO_SLB9645TT_RESET          0
 /* GPIO line SLB9645TT interrupt are routed to */
 #define GPIO_SLB9645TT_INT            13
+
+/* GPIO port used for VBUS detection (USBD_DET = GPIO<6>) */
+#define GPIO_USBD_DET			14
+
+static struct pch_udc_platform_data pch_udc_pdata	= {
+	.vbus_gpio_port	= GPIO_USBD_DET,
+};
+
+static struct platform_device pch_udc_gpio_vbus_device	= {
+	.name			= "pch_gpio_vbus",
+	.id			= -1,
+	.dev			= {
+		.platform_data	= &pch_udc_pdata,
+	},
+};
 
 static int nc_gpio_reg;
 static int sc_gpio_reg;
@@ -439,6 +455,13 @@ static int intel_qrk_plat_reliance_creek_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
+	/* Register GPIO VBUS platform device */
+	ret = platform_device_register(&pch_udc_gpio_vbus_device);
+	if (ret) {
+		pr_err("%s: Failed to register pch_udc_gpio_vbus_device!\n",
+				__func__);
+		return ret;
+	}
 
 	return 0;
 }
