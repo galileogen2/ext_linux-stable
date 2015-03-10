@@ -721,6 +721,10 @@ config INTEL_IMR
 
 	  If you are running on a Galileo/Quark say Y here.
 
+if  X86_INTEL_QUARK
+source "drivers/platform/x86/intel-quark/Kconfig
+endif
+
 config IBM_RTL
 	tristate "Device driver to enable PRTL support"
 	depends on X86 && PCI
