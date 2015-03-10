@@ -1,4 +1,4 @@
-/*
+ /*
  * GPIO interface for Intel Poulsbo SCH
  *
  *  Copyright (c) 2010 CompuLab Ltd

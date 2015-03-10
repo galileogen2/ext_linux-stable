@@ -686,6 +686,19 @@ config INTEL_MFLD_THERMAL
          Say Y here to enable thermal driver support for the  Intel Medfield
          platform.
 
+config INTEL_QRK_THERMAL
+	bool "Thermal driver for Intel Quark platform"
+	depends on X86_INTEL_QUARK
+	help
+	  Say Y here to enable Quark's Thermal driver plus the MSI's
+	  that can be hooked from the thermal sub-system
+
+config INTEL_QRK_AUDIO_CTRL
+	tristate "Audio sub-system control driver for Intel Quark platform"
+	depends on X86_INTEL_QUARK
+	help
+	  Say Y here to enable Quark's audio control driver
+
 config INTEL_IPS
 	tristate "Intel Intelligent Power Sharing"
 	depends on ACPI
