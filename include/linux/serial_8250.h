@@ -98,6 +98,15 @@ struct uart_8250_port {
 	/* 8250 specific callbacks */
 	int			(*dl_read)(struct uart_8250_port *);
 	void			(*dl_write)(struct uart_8250_port *, int);
+
+	/* quark j1708 driver specific */
+	bool			bound_j1708;
+	unsigned int		j1708_idx;
+	struct uart_8250_dma	*j1708_store_dma;
+	/* push one character and its tsc to J1708 char ring buffer */
+	void			(*j1708_push)(unsigned int j1708_idx,
+					      unsigned char ch, u64 tsc,
+					      bool uart_err);
 };
 
 int serial8250_register_8250_port(struct uart_8250_port *);

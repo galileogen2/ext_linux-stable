@@ -699,6 +699,15 @@ config INTEL_QRK_AUDIO_CTRL
 	help
 	  Say Y here to enable Quark's audio control driver
 
+config INTEL_QRK_J1708
+	tristate "SAE J1708 receiver driver for Intel Quark platform"
+	depends on SERIAL_8250
+	help
+	  Select to enable Quark's J1708 receiver driver. This driver works
+	  as SAE J1708 protocol receiver. This driver co-works with the 8250
+	  uart driver, the chosen uart port will be connected to this driver
+	  once the module is loaded and J1708 device file is opened & started.
+
 config INTEL_IPS
 	tristate "Intel Intelligent Power Sharing"
 	depends on ACPI

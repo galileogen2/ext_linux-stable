@@ -1344,6 +1344,49 @@ static void serial8250_enable_ms(struct uart_port *port)
 }
 
 /*
+ * receive characters and push to j1708 driver
+ */
+static void serial8250_rx_j1708_char(struct uart_8250_port *up,
+				     unsigned char lsr, u64 tsc)
+{
+	struct uart_port *port = &up->port;
+	unsigned char ch;
+
+	BUG_ON(!up->bound_j1708);
+
+	if (likely(lsr & UART_LSR_DR))
+		ch = serial_in(up, UART_RX);
+	else
+		ch = 0;
+
+	port->icount.rx++;
+
+	if (unlikely(lsr & UART_LSR_BRK_ERROR_BITS)) {
+		if (lsr & UART_LSR_BI) {
+			lsr &= ~(UART_LSR_FE | UART_LSR_PE);
+			port->icount.brk++;
+		} else if (lsr & UART_LSR_PE) {
+			port->icount.parity++;
+		} else if (lsr & UART_LSR_FE) {
+			port->icount.frame++;
+		}
+
+		if (lsr & UART_LSR_OE)
+			port->icount.overrun++;
+
+		/*
+		 * Mask off conditions which should be ignored.
+		 */
+		lsr &= port->read_status_mask;
+
+		up->j1708_push(up->j1708_idx, 0, tsc, true);
+	}
+
+	if (likely(lsr & UART_LSR_DR))
+		up->j1708_push(up->j1708_idx, ch, tsc, false);
+}
+
+/*
  * serial8250_rx_chars: processes according to the passed in LSR
  * value, and returns the remaining LSR bits not handled
  * by this Rx routine.
@@ -1502,6 +1545,10 @@ int serial8250_handle_irq(struct uart_port *port, unsigned int iir)
 	struct uart_8250_port *up =
 		container_of(port, struct uart_8250_port, port);
 	int dma_err = 0;
+	u64 tsc = 0;
+
+if (up->bound_j1708)
+		rdtscll(tsc);
 
 	if (iir & UART_IIR_NO_INT)
 		return 0;
@@ -1511,6 +1558,12 @@ int serial8250_handle_irq(struct uart_port *port, unsigned int iir)
 	status = serial_port_in(port, UART_LSR);
 
 	DEBUG_INTR("status = %x...", status);
+
+if (up->bound_j1708) {
+		serial8250_rx_j1708_char(up, status, tsc);
+		spin_unlock_irqrestore(&port->lock, flags);
+		return 1;
+	}
 
 	if (status & (UART_LSR_DR | UART_LSR_BI)) {
 		if (up->dma)
@@ -2135,6 +2188,21 @@ static int serial8250_startup(struct uart_port *port)
 	iir = serial_port_in(port, UART_IIR);
 	serial_port_out(port, UART_IER, 0);
 
+	if (up->bound_j1708) {
+		serial_port_out(port, UART_LCR, UART_LCR_WLEN8 | UART_LCR_DLAB);
+		serial_dl_write(up, DIV_ROUND_CLOSEST(port->uartclk/16, 9600));
+		serial_port_out(port, UART_LCR, UART_LCR_WLEN8);
+		up->lcr = UART_LCR_WLEN8;
+
+		serial8250_clear_fifos(up);
+		serial_port_out(port, UART_FCR,
+				UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_00);
+		uart_update_timeout(port, CS8, 9600);
+
+		up->j1708_store_dma = up->dma;
+		up->dma = NULL;
+	}
+
 	if (lsr & UART_LSR_TEMT && iir & UART_IIR_NO_INT) {
 		if (!(up->bugs & UART_BUG_TXEN)) {
 			up->bugs |= UART_BUG_TXEN;
@@ -2207,6 +2275,11 @@ static void serial8250_shutdown(struct uart_port *port)
 
 	if (up->dma)
 		serial8250_release_dma(up);
+
+if (up->bound_j1708 && up->j1708_store_dma) {
+		up->dma = up->j1708_store_dma;
+		up->j1708_store_dma = NULL;
+	}
 
 	spin_lock_irqsave(&port->lock, flags);
 	if (port->flags & UPF_FOURPORT) {
@@ -2531,6 +2604,10 @@ static int serial8250_request_std_resource(struct uart_8250_port *up)
 {
 	unsigned int size = serial8250_port_size(up);
 	struct uart_port *port = &up->port;
+
+if (up->bound_j1708)
+		return 0;
+
 	int ret = 0;
 
 	switch (port->iotype) {
@@ -2568,6 +2645,9 @@ static void serial8250_release_std_resource(struct uart_8250_port *up)
 {
 	unsigned int size = serial8250_port_size(up);
 	struct uart_port *port = &up->port;
+
+if (up->bound_j1708)
+		return;
 
 	switch (port->iotype) {
 	case UPIO_AU:
@@ -3424,6 +3504,57 @@ module_exit(serial8250_exit);
 
 EXPORT_SYMBOL(serial8250_suspend_port);
 EXPORT_SYMBOL(serial8250_resume_port);
+
+/*
+ * unbind 8250_port from tty, instead bind it to j1708
+ */
+int bind_uart_port_to_j1708(struct uart_port **port, unsigned int idx,
+			    unsigned int j1708_idx, void *push_func)
+{
+	struct uart_8250_port *priv;
+	struct uart_port *uport;
+
+	if (idx > UART_NR)
+		return -EINVAL;
+
+	priv = &serial8250_ports[idx];
+	uport = &priv->port;
+
+	priv->j1708_idx = j1708_idx;
+	priv->j1708_push = push_func;
+	priv->bound_j1708 = true;
+
+	/* remove /dev/ttySx to avoid interfere from stty */
+	uart_remove_one_port(&serial8250_reg, uport);
+
+	*port = uport;
+
+	return 0;
+}
+EXPORT_SYMBOL(bind_uart_port_to_j1708);
+
+/*
+ * unbind 8250_port from j1708, re-bind to tty
+ */
+int unbind_uart_port_to_j1708(struct uart_port *uport)
+{
+	int ret = 0;
+	struct uart_8250_port *priv;
+
+	priv = container_of(uport, struct uart_8250_port, port);
+
+	/* recover /dev/ttySx */
+	ret = uart_add_one_port(&serial8250_reg, uport);
+	if (ret < 0)
+		dev_info(uport->dev, "uart register fails %d\n", ret);
+
+	priv->bound_j1708 = false;
+	priv->j1708_push = NULL;
+	priv->j1708_idx  = 255;
+
+	return ret;
+}
+EXPORT_SYMBOL(unbind_uart_port_to_j1708);
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Generic 8250/16x50 serial driver");
