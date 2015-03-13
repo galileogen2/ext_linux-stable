@@ -839,14 +839,11 @@ static void sc16is7xx_config_rs485(struct uart_port *port,
 
 	if (one->rs485.flags & SER_RS485_ENABLED) {
 		sc16is7xx_port_update(port, SC16IS7XX_EFCR_REG,
-				      SC16IS7XX_EFCR_AUTO_RS485_BIT |
-				      SC16IS7XX_EFCR_9BIT_MODE_BIT,
-				      SC16IS7XX_EFCR_AUTO_RS485_BIT |
-				      SC16IS7XX_EFCR_9BIT_MODE_BIT);
+				      SC16IS7XX_EFCR_AUTO_RS485_BIT,
+				      SC16IS7XX_EFCR_AUTO_RS485_BIT);
 	} else {
 		sc16is7xx_port_update(port, SC16IS7XX_EFCR_REG,
-				      SC16IS7XX_EFCR_AUTO_RS485_BIT |
-				      SC16IS7XX_EFCR_9BIT_MODE_BIT,
+				      SC16IS7XX_EFCR_AUTO_RS485_BIT,
 				      0);
 	}
 	/* Configure auto-RS485 RTS output inversion */
