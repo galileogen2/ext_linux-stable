@@ -1,0 +1,5 @@
+config INTEL_QUARK_PLATFORM_GALILEO
+	tristate "Intel Quark X1000 Platform for Galileo"
+	depends on X86_INTEL_QUARK
+	help
+	  Intel Quark X1000 Platform board file for Galileo
