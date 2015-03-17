@@ -159,6 +159,9 @@ static int pxa2xx_spi_pci_probe(struct pci_dev *dev,
 	}
 	ssp->irq = dev->irq;
 	ssp->port_id = (c->port_id >= 0) ? c->port_id : dev->devfn;
+#ifdef CONFIG_X86_INTEL_QUARK
+	ssp->port_id = PCI_FUNC(ssp->port_id);
+#endif
 	ssp->type = c->type;
 
 	snprintf(buf, sizeof(buf), "pxa2xx-spi.%d", ssp->port_id);
