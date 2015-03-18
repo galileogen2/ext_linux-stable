@@ -111,6 +111,7 @@ int gpiod_get_raw_value_cansleep(const struct gpio_desc *desc);
 void gpiod_set_raw_value_cansleep(struct gpio_desc *desc, int value);
 
 int gpiod_set_debounce(struct gpio_desc *desc, unsigned debounce);
+int gpiod_set_drive(struct gpio_desc *desc, unsigned mode);
 
 int gpiod_is_active_low(const struct gpio_desc *desc);
 int gpiod_cansleep(const struct gpio_desc *desc);
@@ -265,6 +266,13 @@ static inline void gpiod_set_raw_value_cansleep(struct gpio_desc *desc,
 }
 
 static inline int gpiod_set_debounce(struct gpio_desc *desc, unsigned debounce)
+{
+	/* GPIO can never have been requested */
+	WARN_ON(1);
+	return -ENOSYS;
+}
+
+tatic inline int gpiod_set_drive(struct gpio_desc *desc, unsigned mode)
 {
 	/* GPIO can never have been requested */
 	WARN_ON(1);

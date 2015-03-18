@@ -1022,6 +1022,25 @@ config MFD_TIMBERDALE
 	The timberdale FPGA can be found on the Intel Atom development board
 	for in-vehicle infontainment, called Russellville.
 
+config CY8C9540A
+	tristate "Cypress CY8C9540 GPIO/PWM expander"
+	depends on GPIOLIB
+	depends on I2C
+	depends on PWM
+	help
+	  Select this option to enable support for the CY8C9540 I/O expander.
+	  This device provides 40 interrupt-capable GPIOs, 8 PWMs and an EEPROM.
+
+config MFD_PCA9685
+	tristate "NPX Semiconductors PCA9685 (PWM/GPIO) driver"
+	depends on GPIOLIB && I2C && PWM
+	select REGMAP_I2C
+	help
+	  NPX PCA9685 I2C-bus PWM controller with GPIO output interface support.
+	  The I2C-bus LED controller provides 16-channel, 12-bit PWM Fm+.
+	  Additionally, the driver allows the channels to be configured as GPIO
+	  interface (output only).
+
 config MFD_TC3589X
 	bool "Toshiba TC35892 and variants"
 	depends on I2C=y

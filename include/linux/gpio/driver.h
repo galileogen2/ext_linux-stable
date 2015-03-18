@@ -34,6 +34,7 @@ struct seq_file;
  * @set: assigns output value for signal "offset"
  * @set_debounce: optional hook for setting debounce time for specified gpio in
  *      interrupt triggered gpio chips
+ * @set_drive: option hook for setting the drive signal for "offset"
  * @to_irq: optional hook supporting non-static gpio_to_irq() mappings;
  *	implementation may not sleep
  * @dbg_show: optional routine to show contents in debugfs; default code
@@ -92,6 +93,9 @@ struct gpio_chip {
 	int			(*set_debounce)(struct gpio_chip *chip,
 						unsigned offset,
 						unsigned debounce);
+	int			(*set_drive)(struct gpio_chip *chip,
+						unsigned offset,
+						unsigned mode);
 
 	int			(*to_irq)(struct gpio_chip *chip,
 						unsigned offset);

@@ -194,6 +194,11 @@ static inline int gpio_cansleep(unsigned gpio)
 	return 0;
 }
 
+static inline int gpio_set_drive(unsigned gpio, unsigned mode)
+{
+	return gpiod_set_drive(gpio_to_desc(gpio), mode);
+}
+
 static inline int gpio_get_value_cansleep(unsigned gpio)
 {
 	might_sleep();
