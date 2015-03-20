@@ -1111,6 +1111,57 @@ int gpiod_is_active_low(const struct gpio_desc *desc)
 }
 EXPORT_SYMBOL_GPL(gpiod_is_active_low);
 
+/**
+ * gpiod_set_drive - sets drive @mode for a @gpio
+ * @gpio: the gpio to set the drive mode
+ * @mode: the drive mode
+ */
+int gpiod_set_drive(struct gpio_desc *desc, unsigned mode)
+{
+	unsigned long		flags;
+	struct gpio_chip	*chip;
+	int			status = -EINVAL;
+	unsigned gpio;
+	spin_lock_irqsave(&gpio_lock, flags);
+
+	if (!desc || !desc->chip) {
+		pr_warn("%s: invalid GPIO\n", __func__);
+		goto fail;
+	}
+
+	chip = desc->chip;
+	if (!chip || !chip->set || !chip->set_drive)
+		goto fail;
+	gpio = desc_to_gpio(desc);
+
+	if (!gpio_is_valid(gpio))
+		goto fail;
+
+	gpio -= chip->base;
+	if (gpio >= chip->ngpio)
+		goto fail;
+
+	//status = gpio_ensure_requested(desc);
+	//if (status < 0)
+	//	goto fail;
+
+	/* now we know the gpio is valid and chip won't vanish */
+
+	spin_unlock_irqrestore(&gpio_lock, flags);
+
+	might_sleep_if(chip->can_sleep);
+
+	return chip->set_drive(chip, gpio, mode);
+fail:
+	spin_unlock_irqrestore(&gpio_lock, flags);
+	if (status)
+		pr_debug("%s: gpio-%d status %d\n",
+			__func__, gpio, status);
+
+	return status;
+}
+EXPORT_SYMBOL_GPL(gpiod_set_drive);
+
 /* I/O calls are only valid after configuration completed; the relevant
  * "is this a valid GPIO" error checks should already have been done.
  *
