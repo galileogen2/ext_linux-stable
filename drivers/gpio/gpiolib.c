@@ -308,9 +308,10 @@ static void gpiochip_irqchip_remove(struct gpio_chip *gpiochip);
  *
  * A gpio_chip with any GPIOs still requested may not be removed.
  */
-void gpiochip_remove(struct gpio_chip *chip)
+int gpiochip_remove(struct gpio_chip *chip)
 {
 	unsigned long	flags;
+	int		status = 0;
 	unsigned	id;
 
 	acpi_gpiochip_remove(chip);
@@ -322,15 +323,24 @@ void gpiochip_remove(struct gpio_chip *chip)
 	of_gpiochip_remove(chip);
 
 	for (id = 0; id < chip->ngpio; id++) {
-		if (test_bit(FLAG_REQUESTED, &chip->desc[id].flags))
-			dev_crit(chip->dev, "REMOVING GPIOCHIP WITH GPIOS STILL REQUESTED\n");
+		if (test_bit(FLAG_REQUESTED, &chip->desc[id].flags)) {
+			status = -EBUSY;
+			break;
+		}
 	}
-	for (id = 0; id < chip->ngpio; id++)
-		chip->desc[id].chip = NULL;
+	if (status ==0) {
+		for (id = 0; id < chip->ngpio; id++)
+			chip->desc[id].chip = NULL;
 
-	list_del(&chip->list);
+		list_del(&chip->list);
+	}
+
 	spin_unlock_irqrestore(&gpio_lock, flags);
-	gpiochip_unexport(chip);
+
+	if (status ==0)
+		gpiochip_unexport(chip);
+
+	return status;
 }
 EXPORT_SYMBOL_GPL(gpiochip_remove);
 
