@@ -528,9 +528,11 @@ static void sc16is7xx_handle_rx(struct uart_port *port, unsigned int rxlen,
 		if (unlikely(lsr & SC16IS7XX_LSR_OE_BIT)) {
 			/* Reset Rx FIFO to clear overrun status */
 			dev_warn(port->dev, "Resetting RX FIFO due to overrun");
+			regcache_cache_bypass(s->regmap, true);
 			sc16is7xx_port_update(port, SC16IS7XX_FCR_REG,
 					      SC16IS7XX_FCR_RXRESET_BIT,
 					      SC16IS7XX_FCR_RXRESET_BIT);
+			regcache_cache_bypass(s->regmap, false);
 			break;
 		}
 	}
