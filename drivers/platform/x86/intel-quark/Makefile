@@ -5,4 +5,4 @@ obj-$(CONFIG_X86_INTEL_QUARK)			+= intel_quark_platform_galileo.o
 obj-$(CONFIG_X86_INTEL_QUARK)			+= intel_quark_platform_cross_hill.o
 obj-$(CONFIG_X86_INTEL_QUARK)			+= intel_quark_platform_clanton_peak.o
 obj-$(CONFIG_X86_INTEL_QUARK)			+= intel_quark_platform_clanton_hill.o
-#obj-$(CONFIG_X86_INTEL_QUARK)>-+= intel_qrk_plat_kips_bay.o
+obj-$(CONFIG_X86_INTEL_QUARK)			+= intel_quark_platform_kips_bay.o
