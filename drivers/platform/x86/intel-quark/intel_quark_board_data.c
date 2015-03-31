@@ -104,7 +104,22 @@ static struct platform_device bsp_data[] = {
 		.name	= "GalileoGen2",
 		.id	= -1,
 	},
-
+	{
+		.name	= "CrossHill",
+		.id	= -1,
+	},
+	{
+		.name	= "ClantonHill",
+		.id	= -1,
+	},
+	{
+		.name	= "ClantonPeakSVP",
+		.id	= -1,
+	},
+	{
+		.name	= "KipsBay",
+		.id	= -1,
+	},
 };
 
 /**
@@ -209,7 +224,7 @@ static int __init intel_qrk_board_data_init(void)
 	     i < sizeof(bsp_data)/sizeof(struct platform_device); i++) {
 		if (!strcmp(bsp_data[i].name, board_name)) {
 			/* Register Galileo Platform Device as General */
-			platform_device_register(&bsp_data[0]);
+			platform_device_register(&bsp_data[i]);
 			found = true;
 
 			/* Galileo IDE expects this entry */
