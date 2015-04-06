@@ -1626,6 +1626,13 @@ config EFI_STUB
 
 	  See Documentation/efi-stub.txt for more information.
 
+config EFI_CAPSULE
+       tristate "EFI capsule update support"
+       depends on EFI
+       ---help---
+          This kernel feature allows for loading of EFI capsule code
+	  with callbacks into the EDK firmware to execute update
+
 config SECCOMP
 	def_bool y
 	prompt "Enable seccomp to safely compute untrusted bytecode"

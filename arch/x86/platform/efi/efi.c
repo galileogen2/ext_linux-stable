@@ -898,12 +898,17 @@ static int __init save_runtime_map(void)
 	void *tmp, *p, *q = NULL;
 	int count = 0;
 
+	/*
+	 * Determine if mapping EFI boot code/data is required for BGRT mapping
+	 */
+	bool bgrt_map = efi_bgrt_probe();
+
 	for (p = memmap.map; p < memmap.map_end; p += memmap.desc_size) {
 		md = p;
 
-		if (!(md->attribute & EFI_MEMORY_RUNTIME) ||
-		    (md->type == EFI_BOOT_SERVICES_CODE) ||
-		    (md->type == EFI_BOOT_SERVICES_DATA))
+		if (!((md->attribute & EFI_MEMORY_RUNTIME) || (bgrt_map &&
+			(md->type == EFI_BOOT_SERVICES_CODE ||
+			 md->type == EFI_BOOT_SERVICES_DATA))))
 			continue;
 		tmp = krealloc(q, (count + 1) * memmap.desc_size, GFP_KERNEL);
 		if (!tmp)
