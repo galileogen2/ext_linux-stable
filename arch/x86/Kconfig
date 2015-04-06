@@ -475,6 +475,7 @@ config X86_INTEL_QUARK
 	select IOSF_MBI
 	select INTEL_IMR
 	select COMMON_CLK
+	select ARCH_REQUIRE_GPIOLIB
 	---help---
 	  Select to include support for Quark X1000 SoC.
 	  Say Y here if you have a Quark based system such as the Arduino
