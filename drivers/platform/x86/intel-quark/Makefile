@@ -7,3 +7,5 @@ obj-$(CONFIG_X86_INTEL_QUARK)			+= intel_quark_platform_clanton_peak.o
 obj-$(CONFIG_X86_INTEL_QUARK)			+= intel_quark_platform_clanton_hill.o
 obj-$(CONFIG_X86_INTEL_QUARK)			+= intel_quark_platform_kips_bay.o
 obj-$(CONFIG_INTEL_QRK_J1708) += intel_qrk_j1708.o
+obj-$(CONFIG_INTEL_QRK_AUDIO_CTRL)+= intel_qrk_audio_ctrl.o
+obj-$(CONFIG_INTEL_QRK_THERMAL)+= intel_qrk_thermal.o
