@@ -896,7 +896,7 @@ static int can_rtnl_doit(struct sk_buff *skb, struct nlmsghdr *nlh, void *arg)
 		break;
 	}
 	if (fn)
-		ret = fn(skb, nlh, arg);
+		ret = fn(skb, nlh);
 	else
 		ret = -EPROTONOSUPPORT;
 	can_put_proto(cp);
