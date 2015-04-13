@@ -1053,6 +1053,32 @@ config MFD_PCA9685
 	  Additionally, the driver allows the channels to be configured as GPIO
 	  interface (output only).
 
+config INTEL_QRK_GIP
+	tristate "Intel Quark GIP"
+	depends on PCI && X86 && X86_INTEL_QUARK
+	depends on I2C
+	select GENERIC_IRQ_CHIP
+	help
+	  GIP driver for Quark SoC.
+	  Quark GIP is a single PCI function exporting a GPIO and an I2C
+	  controller, namely Synopsys DesignWare GPIO and Synopsys DesignWare
+	  I2C.  The GPIO interface exports a total amount of 8 interrupt-capable
+	  GPIOs.
+
+config INTEL_QRK_GIP_TEST
+	tristate "Intel Quark GIP support for Integration Testing"
+	depends on INTEL_QRK_GIP
+	select I2C_CHARDEV
+	select GPIO_SYSFS
+	select SPI
+	select SPI_BITBANG
+	select SPI_GPIO
+	select SPI_MASTER
+	select SPI_SPIDEV
+	help
+	  Quark GIP automated Integration Testing package.
+	  It selects kernel components needed for GPIO and I2C tests as per
+
 config MFD_TC3589X
 	bool "Toshiba TC35892 and variants"
 	depends on I2C=y
