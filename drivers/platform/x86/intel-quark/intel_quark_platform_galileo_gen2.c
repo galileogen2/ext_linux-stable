@@ -35,6 +35,7 @@
 #include <linux/spi/pxa2xx_spi.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
+#include <linux/mfd/intel_qrk_gip_pdata.h>
 
 /******************************************************************************
  *                        Intel Galileo Gen2
@@ -48,6 +49,15 @@ static int gpio_cs;
 
 module_param(gpio_cs, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(gpio_cs, "Enable GPIO chip-select for SPI channel 1");
+
+/* Galileo Gen2 boards require i2c master to operate @400kHz 'fast mode' */
+static struct intel_qrk_gip_pdata gip_pdata_gen2 = {
+	.i2c_std_mode = 0,
+};
+static struct intel_qrk_gip_pdata *galileo_gen2_gip_get_pdata(void)
+{
+	return &gip_pdata_gen2;
+}
 
 /******************************************************************************
  *             Texas Instruments ADC1x8S102 SPI Device Platform Data
@@ -265,6 +275,9 @@ static int intel_quark_galileo_gen2_init(struct platform_device *pdev)
 	int ret = 0;
 	struct i2c_adapter *i2c_adap = NULL;
 	struct i2c_client *client = NULL;
+
+	/* Assign GIP driver handle for board-specific settings */
+	intel_qrk_gip_get_pdata = galileo_gen2_gip_get_pdata;
 
 	/* Need to tell the PCA953X driver which GPIO IRQ to use for signalling
 	 * interrupts.  We can't get the IRQ until the GPIO driver is loaded.

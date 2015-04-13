@@ -35,6 +35,7 @@
 #include <linux/spi/pxa2xx_spi.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
+#include <linux/mfd/intel_qrk_gip_pdata.h>
 
 #define DRIVER_NAME "Galileo"
 
@@ -104,6 +105,15 @@ static struct cy8c9540a_pdata cy8c9540a_platform_data = {
 	.pwm_base		= 0,
 	.irq_base		= 64,
 };
+
+/* Cypress expander requires i2c master to operate @100kHz 'standard mode' */
+static struct intel_qrk_gip_pdata gip_pdata = {
+	.i2c_std_mode = 1,
+};
+static struct intel_qrk_gip_pdata *galileo_gip_get_pdata(void)
+{
+	return &gip_pdata;
+}
 
 /******************************************************************************
  *             Analog Devices AD7298 SPI Device Platform Data
@@ -278,6 +288,9 @@ static int intel_quark_galileo_gen1_init(struct platform_device *pdev)
 	int ret = 0;
 	static int spi_done;
 	static int gpios_done;
+
+	/* Assign GIP driver handle for board-specific settings */
+	intel_qrk_gip_get_pdata = galileo_gip_get_pdata;
 
 	if (spi_done)
 		goto gpios;
