@@ -27,10 +27,14 @@
 #define ST_SENSORS_FULLSCALE_AVL_MAX		10
 
 #define ST_SENSORS_NUMBER_ALL_CHANNELS		4
+#define ST_SENSORS_NUMBER_DATA_CHANNELS		3
 #define ST_SENSORS_ENABLE_ALL_AXIS		0x07
+#define ST_SENSORS_BYTE_FOR_CHANNEL		2
 #define ST_SENSORS_SCAN_X			0
 #define ST_SENSORS_SCAN_Y			1
 #define ST_SENSORS_SCAN_Z			2
+#define ST_SENSORS_DEFAULT_12_REALBITS		12
+#define ST_SENSORS_DEFAULT_16_REALBITS		16
 #define ST_SENSORS_DEFAULT_POWER_ON_VALUE	0x01
 #define ST_SENSORS_DEFAULT_POWER_OFF_VALUE	0x00
 #define ST_SENSORS_DEFAULT_WAI_ADDRESS		0x0f
@@ -265,6 +269,9 @@ static inline void st_sensors_deallocate_trigger(struct iio_dev *indio_dev)
 int st_sensors_init_sensor(struct iio_dev *indio_dev,
 					struct st_sensors_platform_data *pdata);
 
+int st_sensors_write_data_with_mask(struct iio_dev *indio_dev,
+				u8 reg_addr, u8 mask, u8 data);
+
 int st_sensors_set_enable(struct iio_dev *indio_dev, bool enable);
 
 int st_sensors_set_axis_enable(struct iio_dev *indio_dev, u8 axis_enable);
@@ -274,6 +281,9 @@ int st_sensors_set_odr(struct iio_dev *indio_dev, unsigned int odr);
 int st_sensors_set_dataready_irq(struct iio_dev *indio_dev, bool enable);
 
 int st_sensors_set_fullscale_by_gain(struct iio_dev *indio_dev, int scale);
+
+int st_sensors_read_axis_data(struct iio_dev *indio_dev,
+				struct iio_chan_spec const *ch, int *data);
 
 int st_sensors_read_info_raw(struct iio_dev *indio_dev,
 				struct iio_chan_spec const *ch, int *val);

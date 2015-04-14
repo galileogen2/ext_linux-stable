@@ -83,8 +83,14 @@ static struct spi_board_info spi_onboard_devs[] = {
 #define ST_ACCEL_GPIO_S0 15
 #define ST_ACCEL_GPIO_S3 4
 
-static struct lis331dlh_intel_qrk_platform_data lis331dlh_i2c_platform_data = {
+static const struct st_sensors_platform_data lis331dlh_pdata = {
+	.drdy_int_pin =2,
+};
+
+
+static const struct lis331dlh_intel_qrk_platform_data lis331dlh_i2c_platform_data = {
 	.irq2_pin = ST_ACCEL_GPIO_S3,
+	.default_lis331dlh_pdata = &lis331dlh_pdata,
 };
 
 static struct gpio reserved_gpios[] = {

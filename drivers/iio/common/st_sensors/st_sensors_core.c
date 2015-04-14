@@ -25,7 +25,7 @@ static inline u32 st_sensors_get_unaligned_le24(const u8 *p)
 	return (s32)((p[0] | p[1] << 8 | p[2] << 16) << 8) >> 8;
 }
 
-static int st_sensors_write_data_with_mask(struct iio_dev *indio_dev,
+int st_sensors_write_data_with_mask(struct iio_dev *indio_dev,
 						u8 reg_addr, u8 mask, u8 data)
 {
 	int err;
@@ -42,6 +42,7 @@ static int st_sensors_write_data_with_mask(struct iio_dev *indio_dev,
 st_sensors_write_data_with_mask_error:
 	return err;
 }
+EXPORT_SYMBOL(st_sensors_write_data_with_mask);
 
 static int st_sensors_match_odr(struct st_sensors *sensor,
 			unsigned int odr, struct st_sensor_odr_avl *odr_out)
@@ -322,7 +323,7 @@ st_sensors_match_scale_error:
 }
 EXPORT_SYMBOL(st_sensors_set_fullscale_by_gain);
 
-static int st_sensors_read_axis_data(struct iio_dev *indio_dev,
+int st_sensors_read_axis_data(struct iio_dev *indio_dev,
 				struct iio_chan_spec const *ch, int *data)
 {
 	int err;
@@ -350,6 +351,7 @@ st_sensors_free_memory:
 
 	return err;
 }
+EXPORT_SYMBOL(st_sensors_read_axis_data);
 
 int st_sensors_read_info_raw(struct iio_dev *indio_dev,
 				struct iio_chan_spec const *ch, int *val)
