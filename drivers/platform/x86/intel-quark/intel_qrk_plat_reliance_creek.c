@@ -18,11 +18,10 @@
 #include <linux/errno.h>
 #include <linux/gpio.h>
 #include <linux/i2c.h>
-#include <linux/i2c/at24.h>
+#include <linux/platform_data/at24.h>
 #include <linux/io.h>
 #include <linux/ioport.h>
 #include <linux/module.h>
-#include <linux/mfd/intel_qrk_gip_pdata.h>
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/physmap.h>
 #include <linux/platform_device.h>
@@ -48,16 +47,7 @@
 static int nc_gpio_reg;
 static int sc_gpio_reg;
 
-/* Reliance Creek boards require i2c master to operate @400kHz 'fast mode' */
-static struct intel_qrk_gip_pdata gip_pdata = {
-	.i2c_std_mode = 0,
-};
-static struct intel_qrk_gip_pdata *reliance_creek_gip_get_pdata(void)
-{
-	return &gip_pdata;
-}
-
-#include "linux/i2c/pca953x.h"
+#include "linux/platform_data/pca953x.h"
 #define PCF8574_GPIO_BASE_OFFSET 16
 
 static struct pcf857x_platform_data pcf8574_platform_data_exp1 = {
@@ -423,9 +413,6 @@ end:
 static int intel_qrk_plat_reliance_creek_probe(struct platform_device *pdev)
 {
 	int ret = 0;
-
-	/* Assign GIP driver handle for board-specific settings */
-	intel_qrk_gip_get_pdata = reliance_creek_gip_get_pdata;
 
 	/* Register on-board I2C devices (common to all SKUs) */
 	ret = intel_qrk_i2c_add_onboard_devs();
