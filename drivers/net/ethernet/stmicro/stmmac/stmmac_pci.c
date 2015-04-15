@@ -158,6 +158,26 @@ static struct stmmac_pci_dmi_data quark_pci_dmi_data[] = {
 		.func = 7,
 		.phy_addr = 1,
 	},
+	{
+		.name = "RelianceCreek",
+		.func = 6,
+		.phy_addr = 1,
+	},
+	{
+		.name = "RelianceCreek",
+		.func = 7,
+		.phy_addr = 1,
+	},
+	{
+		.name = "RelianceCreekSPU",
+		.func = 6,
+		.phy_addr = 1,
+	},
+	{
+		.name = "RelianceCreekSPU",
+		.func = 7,
+		.phy_addr = 1,
+	},
 	{}
 };
 
