@@ -96,7 +96,7 @@ static struct pxa_spi_info spi_info_configs[] = {
 	[PORT_QUARK_X1000] = {
 		.type = QUARK_X1000_SSP,
 		.port_id = -1,
-		.num_chipselect = 1,
+		.num_chipselect = 4,
 		.max_clk_rate = 50000000,
 	},
 };
