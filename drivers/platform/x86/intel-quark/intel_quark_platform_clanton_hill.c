@@ -203,6 +203,7 @@ static struct platform_driver gpio_restrict_pdriver = {
 	.probe		= intel_qrk_gpio_restrict_probe,
 };
 
+#if 0
 static int intel_qrk_plat_clanton_hill_probe(struct platform_device *pdev)
 {
 	int ret = 0;
@@ -211,6 +212,7 @@ static int intel_qrk_plat_clanton_hill_probe(struct platform_device *pdev)
 
 	return ret;
 }
+#endif
 
 static int intel_qrk_plat_clanton_hill_remove(struct platform_device *pdev)
 {
@@ -264,7 +266,7 @@ static struct platform_driver qrk_clanton_hill_driver = {
 		.owner	= THIS_MODULE,
 		.pm	= &qrk_clanton_hill_pm,
 	},
-	.probe		= intel_qrk_plat_clanton_hill_probe,
+	.probe		= intel_qrk_gpio_restrict_probe,
 	.remove		= intel_qrk_plat_clanton_hill_remove,
 };
 
