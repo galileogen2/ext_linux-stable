@@ -121,29 +121,15 @@ static int intel_qrk_spi_add_onboard_devs(void)
 					ARRAY_SIZE(spi1_onboard_devs));
 }
 
-
 /**
- * intel_qrk_gpio_restrict_probe
+ * intel_qrk_plat_kips_bay_probe
  *
  * Make GPIOs pertaining to Firmware inaccessible by requesting them.  The
  * GPIOs are never released nor accessed by this driver.
  */
-static int intel_qrk_gpio_restrict_probe(struct platform_device *pdev)
-{
-	return intel_qrk_spi_add_onboard_devs();
-}
-
-static struct platform_driver gpio_restrict_pdriver = {
-	.driver		= {
-		.name	= GPIO_RESTRICT_NAME,
-		.owner	= THIS_MODULE,
-	},
-	.probe		= intel_qrk_gpio_restrict_probe,
-};
-
 static int intel_qrk_plat_kips_bay_probe(struct platform_device *pdev)
 {
-	return platform_driver_register(&gpio_restrict_pdriver);
+	return intel_qrk_spi_add_onboard_devs();
 }
 
 static int intel_qrk_plat_kips_bay_remove(struct platform_device *pdev)
