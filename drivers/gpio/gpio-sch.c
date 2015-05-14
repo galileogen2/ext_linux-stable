@@ -53,12 +53,9 @@ struct sch_gpio_context {
 	u32 cglvl;
 	u32 cgsmi;
 	u32 cgnmien;
-	/* Core well interrupt trigger enable */
-	u32 cgtpe;
-	u32 cgtne;
-	/* Resume well interrupt trigger enable */
-	u32 rgtpe;
-	u32 rgtne;
+	/* Well interrupt trigger enable */
+	u32 gtpe;
+	u32 gtne;
 };
 
 struct sch_gpio {
@@ -198,12 +195,20 @@ static struct gpio_chip sch_gpio_chip = {
 static void sch_gpio_irq_enable(struct irq_data *d)
 {
 	struct sch_gpio *sch = container_of(d, struct sch_gpio, data);
+	struct sch_gpio_context *regs = &sch->context;
 	u32 gpio_num;
 	unsigned long flags;
 
 	gpio_num = d->irq - sch->irq_base;
+
 	spin_lock_irqsave(&sch->lock, flags);
+
+	if(regs->gtpe & BIT(gpio_num))
+		sch_gpio_reg_set(&sch->chip, gpio_num, GTPE, 1);
+	if(regs->gtne & BIT(gpio_num))
+		sch_gpio_reg_set(&sch->chip, gpio_num, GTNE, 1);
 	sch_gpio_reg_set(&sch->chip, gpio_num, GGPE, 1);
+
 	spin_unlock_irqrestore(&sch->lock, flags);
 }
 
@@ -240,6 +245,7 @@ static void sch_gpio_irq_ack(struct irq_data *d)
 static int sch_gpio_irq_type(struct irq_data *d, unsigned type)
 {
 	struct sch_gpio *sch = container_of(d, struct sch_gpio, data);
+	struct sch_gpio_context *regs = &sch->context;
 	unsigned long flags;
 	u32 gpio_num;
 
@@ -272,6 +278,12 @@ static int sch_gpio_irq_type(struct irq_data *d, unsigned type)
 		spin_unlock_irqrestore(&sch->lock, flags);
 		return -EINVAL;
 	}
+
+	/* cache trigger setup */
+	regs->gtpe &= ~BIT(gpio_num);
+	regs->gtne &= ~BIT(gpio_num);
+	regs->gtpe |= inl(sch->iobase + GTPE);
+	regs->gtne |= inl(sch->iobase + GTNE);
 
 	spin_unlock_irqrestore(&sch->lock, flags);
 
