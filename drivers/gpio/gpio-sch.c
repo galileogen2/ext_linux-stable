@@ -214,10 +214,15 @@ static void sch_gpio_irq_disable(struct irq_data *d)
 	unsigned long flags;
 
 	gpio_num = d->irq - sch->irq_base;
-	spin_lock_irqsave(&sch->lock, flags);
-	if (!test_bit(gpio_num, sch->wake_irqs))
+
+	if (!test_bit(gpio_num, sch->wake_irqs)) {
+		spin_lock_irqsave(&sch->lock, flags);
 		sch_gpio_reg_set(&sch->chip, gpio_num, GGPE, 0);
-	spin_unlock_irqrestore(&sch->lock, flags);
+		sch_gpio_reg_set(&sch->chip, gpio_num, GTPE, 0);
+		sch_gpio_reg_set(&sch->chip, gpio_num, GTNE, 0);
+		sch_gpio_reg_set(&sch->chip, gpio_num, GTS, 1);
+		spin_unlock_irqrestore(&sch->lock, flags);
+	}
 }
 
 static void sch_gpio_irq_ack(struct irq_data *d)
