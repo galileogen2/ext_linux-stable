@@ -282,7 +282,7 @@ static void sch_gpio_irqs_init(struct sch_gpio *sch, unsigned int num)
 	for (i = 0; i < num; i++) {
 		irq_set_chip_data(i + sch->irq_base, sch);
 		irq_set_chip_and_handler_name(i + sch->irq_base, &sch_irq_chip,
-					handle_simple_irq, "sch_gpio_irq_chip");
+					handle_edge_irq, "sch_gpio_irq_chip");
 	}
 }
 
