@@ -42,6 +42,9 @@
 #define CGNMIEN	0x40
 #define RGNMIEN	0x44
 
+/* Maximum number of resume GPIOS supported by this driver */
+#define MAX_GPIO_IRQS	9
+
 /* Cache register context */
 struct sch_gpio_context {
 	/* Core well generic registers */
@@ -69,6 +72,7 @@ struct sch_gpio {
 	int irq;
 	int irq_base;
 	bool irq_support;
+	DECLARE_BITMAP(wake_irqs, MAX_GPIO_IRQS);
 };
 
 #define to_sch_gpio(gc)	container_of(gc, struct sch_gpio, chip)
@@ -211,7 +215,8 @@ static void sch_gpio_irq_disable(struct irq_data *d)
 
 	gpio_num = d->irq - sch->irq_base;
 	spin_lock_irqsave(&sch->lock, flags);
-	sch_gpio_reg_set(&sch->chip, gpio_num, GGPE, 0);
+	if (!test_bit(gpio_num, sch->wake_irqs))
+		sch_gpio_reg_set(&sch->chip, gpio_num, GGPE, 0);
 	spin_unlock_irqrestore(&sch->lock, flags);
 }
 
@@ -268,11 +273,46 @@ static int sch_gpio_irq_type(struct irq_data *d, unsigned type)
 	return 0;
 }
 
+/*
+ * Enables/Disables power-management wake-on of an IRQ.
+ * Inhibits disabling of the specified IRQ if on != 0.
+ * Make sure you call it via irq_set_irq_wake() with on = 1 during suspend
+ * and
+ * with on = 0 during resume.
+ * Returns 0 if success, negative error code otherwhise
+ */
+int sch_gpio_resume_irq_set_wake(struct irq_data *d, unsigned int on)
+{
+	struct sch_gpio *sch = container_of(d, struct sch_gpio, data);
+	u32 gpio_num = 0;
+	int ret = 0;
+
+	if (NULL == d) {
+		pr_err("%s(): Null irq_data\n", __func__);
+		ret = -EFAULT;
+		goto end;
+	}
+	gpio_num = d->irq - sch->irq_base;
+	if (gpio_num >= MAX_GPIO_IRQS) {
+		pr_err("%s(): gpio_num bigger(%d) than MAX_GPIO_IRQS(%d)-1\n",
+				__func__, gpio_num, MAX_GPIO_IRQS);
+		ret = -EINVAL;
+		goto end;
+	}
+	if (on)
+		set_bit(gpio_num, sch->wake_irqs);
+	else
+		clear_bit(gpio_num, sch->wake_irqs);
+end:
+	return ret;
+}
+
 static struct irq_chip sch_irq_chip = {
 	.irq_enable	= sch_gpio_irq_enable,
 	.irq_disable	= sch_gpio_irq_disable,
 	.irq_ack	= sch_gpio_irq_ack,
 	.irq_set_type	= sch_gpio_irq_type,
+	.irq_set_wake	= sch_gpio_resume_irq_set_wake,
  };
 
 static void sch_gpio_irqs_init(struct sch_gpio *sch, unsigned int num)
