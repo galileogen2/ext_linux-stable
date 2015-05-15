@@ -486,7 +486,7 @@ static int intel_qrk_esram_test_probe(struct platform_device * pdev)
 		kfree(esram_test_dev.pdata);
 		return -EINVAL;
 	}
-	printk(KERN_INFO "%s/%s/%s complete OK !!\n", __FUNCTION__, __DATE__,__TIME__);
+	printk(KERN_INFO "%s complete OK !!\n", __FUNCTION__);
 	return 0;
 
 }
