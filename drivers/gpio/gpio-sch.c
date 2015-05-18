@@ -39,6 +39,7 @@
 #define GGPE	0x14
 #define GSMI	0x18
 #define GTS	0x1C
+#define RGTS	0x3C
 #define CGNMIEN	0x40
 #define RGNMIEN	0x44
 
@@ -378,22 +379,36 @@ static void sch_gpio_irq_disable_all(struct sch_gpio *sch, unsigned int num)
 	spin_unlock_irqrestore(&sch->lock, flags);
 }
 
+static inline irqreturn_t do_serve_irq(int reg_status, unsigned int irq_base)
+{
+	int ret = IRQ_NONE;
+	u32 pending = 0, gpio = 0;
+	/* Which pin (if any) triggered the interrupt */
+	while ((pending = inb(reg_status))) {
+		/* Serve each asserted interrupt */
+		do {
+			gpio = __ffs(pending);
+			generic_handle_irq(irq_base + gpio);
+			pending &= ~BIT(gpio);
+			ret = IRQ_HANDLED;
+		} while (pending);
+	}
+	return ret;
+}
+
 static irqreturn_t sch_gpio_irq_handler(int irq, void *dev_id)
 {
 	struct sch_gpio *sch = dev_id;
-	int res;
-	unsigned int i;
 	int ret = IRQ_NONE;
+	/* In 3.14, both the core and resume banks are consolidated,
+	 * but the physical registers are still separated. In order
+	 * to access the status of resume bank irq status, we need
+	 * recalculate the irq base for resume bank
+	 */
+	int resume_irq_base =  sch->irq_base + sch->resume_base;
 
-	for (i = 0; i < sch->chip.ngpio; i++) {
-		res = sch_gpio_reg_get(&sch->chip, i, GTS);
-		if (res) {
-			/* clear by setting GTS to 1 */
-			sch_gpio_reg_set(&sch->chip, i, GTS, 1);
-			generic_handle_irq(sch->irq_base + i);
-			ret = IRQ_HANDLED;
-		}
-	}
+	ret |= do_serve_irq(sch->iobase + GTS, sch->irq_base);
+	ret |= do_serve_irq(sch->iobase + RGTS, resume_irq_base);
 
 	return ret;
 }
