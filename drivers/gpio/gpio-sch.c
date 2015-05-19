@@ -61,7 +61,6 @@ struct sch_gpio_context {
 
 struct sch_gpio {
 	struct gpio_chip chip;
-	struct irq_data data;
 	struct sch_gpio_context context;
 	spinlock_t lock;
 	unsigned short iobase;
@@ -195,7 +194,7 @@ static struct gpio_chip sch_gpio_chip = {
 
 static void sch_gpio_irq_enable(struct irq_data *d)
 {
-	struct sch_gpio *sch = container_of(d, struct sch_gpio, data);
+	struct sch_gpio *sch = irq_data_get_irq_chip_data(d);
 	struct sch_gpio_context *regs = &sch->context;
 	u32 gpio_num;
 	unsigned long flags;
@@ -215,7 +214,7 @@ static void sch_gpio_irq_enable(struct irq_data *d)
 
 static void sch_gpio_irq_disable(struct irq_data *d)
 {
-	struct sch_gpio *sch = container_of(d, struct sch_gpio, data);
+	struct sch_gpio *sch = irq_data_get_irq_chip_data(d);
 	u32 gpio_num;
 	unsigned long flags;
 
@@ -233,7 +232,7 @@ static void sch_gpio_irq_disable(struct irq_data *d)
 
 static void sch_gpio_irq_ack(struct irq_data *d)
 {
-	struct sch_gpio *sch = container_of(d, struct sch_gpio, data);
+	struct sch_gpio *sch = irq_data_get_irq_chip_data(d);
 	u32 gpio_num;
 	unsigned long flags;
 
@@ -245,7 +244,7 @@ static void sch_gpio_irq_ack(struct irq_data *d)
 
 static int sch_gpio_irq_type(struct irq_data *d, unsigned type)
 {
-	struct sch_gpio *sch = container_of(d, struct sch_gpio, data);
+	struct sch_gpio *sch = irq_data_get_irq_chip_data(d);
 	struct sch_gpio_context *regs = &sch->context;
 	unsigned long flags;
 	u32 gpio_num;
@@ -301,7 +300,7 @@ static int sch_gpio_irq_type(struct irq_data *d, unsigned type)
  */
 int sch_gpio_resume_irq_set_wake(struct irq_data *d, unsigned int on)
 {
-	struct sch_gpio *sch = container_of(d, struct sch_gpio, data);
+	struct sch_gpio *sch = irq_data_get_irq_chip_data(d);
 	u32 gpio_num = 0;
 	int ret = 0;
 
