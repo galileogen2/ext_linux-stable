@@ -36,9 +36,6 @@ static struct platform_device pdevice[] = {
 		.name = "intel-qrk-esram",
 	},
 	{
-		.name = "intel-qrk-ecc",
-	},
-	{
 		.name = "intel-qrk-thrm",
 	},
 };
@@ -214,10 +211,12 @@ static int iosf_mbi_probe(struct pci_dev *pdev,
 		return ret;
 	}
 
+	if(pdev->device == PCI_DEVICE_ID_QUARK_X1000) {
 		/* Register side-band sub-ordinate drivers */
-	for (i = 0; i < sizeof(pdevice)/sizeof(struct platform_device); i++) {
-		/* Register side-band sub-ordinate drivers */
-		platform_device_register(&pdevice[i]);
+		for (i = 0; i < sizeof(pdevice)/sizeof(struct platform_device); i++) {
+			/* Register side-band sub-ordinate drivers */
+			platform_device_register(&pdevice[i]);
+		}
 	}
 
 	mbi_pdev = pci_dev_get(pdev);
