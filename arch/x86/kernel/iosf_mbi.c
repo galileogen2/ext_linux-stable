@@ -22,12 +22,26 @@
 #include <linux/init.h>
 #include <linux/spinlock.h>
 #include <linux/pci.h>
+#include <linux/platform_device.h>
 
 #include <asm/iosf_mbi.h>
 
 #define PCI_DEVICE_ID_BAYTRAIL		0x0F00
 #define PCI_DEVICE_ID_BRASWELL		0x2280
 #define PCI_DEVICE_ID_QUARK_X1000	0x0958
+
+/* Dependant drivers */
+static struct platform_device pdevice[] = {
+	{
+		.name = "intel-qrk-esram",
+	},
+	{
+		.name = "intel-qrk-ecc",
+	},
+	{
+		.name = "intel-qrk-thrm",
+	},
+};
 
 static DEFINE_SPINLOCK(iosf_mbi_lock);
 
@@ -192,11 +206,18 @@ static int iosf_mbi_probe(struct pci_dev *pdev,
 			  const struct pci_device_id *unused)
 {
 	int ret;
+	int i = 0;
 
 	ret = pci_enable_device(pdev);
 	if (ret < 0) {
 		dev_err(&pdev->dev, "error: could not enable device\n");
 		return ret;
+	}
+
+		/* Register side-band sub-ordinate drivers */
+	for (i = 0; i < sizeof(pdevice)/sizeof(struct platform_device); i++) {
+		/* Register side-band sub-ordinate drivers */
+		platform_device_register(&pdevice[i]);
 	}
 
 	mbi_pdev = pci_dev_get(pdev);
