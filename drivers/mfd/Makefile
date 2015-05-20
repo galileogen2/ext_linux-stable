@@ -145,6 +145,7 @@ intel_qrk_gip-objs		:= intel_qrk_gip_core.o \
 					intel_qrk_gip_i2c.o \
 					../i2c/busses/i2c-designware-core.o
 obj-$(CONFIG_X86_INTEL_QUARK)	+= intel_qrk_gip_pdata.o
+obj-$(CONFIG_INTEL_QRK_GIP_TEST)+= intel_qrk_gip_test.o
 obj-$(CONFIG_LPC_SCH)		+= lpc_sch.o
 obj-$(CONFIG_LPC_ICH)		+= lpc_ich.o
 obj-$(CONFIG_MFD_RDC321X)	+= rdc321x-southbridge.o

@@ -741,7 +741,7 @@ static int gpio_nmi_enable(int enable)
 	unsigned int base_u32 = 0x0;
 	unsigned short base = 0x0;
 	struct pci_dev *ilb = pci_get_device(PCI_VENDOR_ID_INTEL,
-					     PCI_DEVICE_ID_INTEL_QUARK_ILB,
+					     PCI_DEVICE_ID_INTEL_QUARK_X1000_ILB,
 					     NULL);
 	/* Assume interrupts are disabled by default by BIOS */
 	unsigned char gpio = enable ? 0x01 : 0x00;
