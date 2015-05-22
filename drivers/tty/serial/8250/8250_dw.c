@@ -148,7 +148,17 @@ static unsigned int dw8250_serial_in32(struct uart_port *p, int offset)
 
 	return dw8250_modify_msr(p, offset, value);
 }
+static void dw8250_set_termios(struct uart_port *p, struct ktermios *termios,
+		   struct ktermios *old)
+{
+	struct uart_8250_port *up =
+		container_of(p, struct uart_8250_port, port);
 
+	/* For Quark, hs-uart is capable of auto flow control */
+	up->capabilities |= UART_CAP_AFE;
+
+	serial8250_do_set_termios(p, termios, old);
+}
 static int dw8250_handle_irq(struct uart_port *p)
 {
 	struct dw8250_data *d = p->private_data;
@@ -239,7 +249,7 @@ static int dw8250_probe_of(struct uart_port *p,
 		p->type = PORT_OCTEON;
 		data->usr_reg = 0x27;
 		has_ucv = false;
-	} else if (!of_property_read_u32(np, "reg-io-width", &val)) {
+	}	else if (!of_property_read_u32(np, "reg-io-width", &val)) {
 		switch (val) {
 		case 1:
 			break;
@@ -272,6 +282,96 @@ static int dw8250_probe_of(struct uart_port *p,
 
 	return 0;
 }
+static void _dw8250_mfd_dma_probe(struct uart_8250_port *up,
+					struct uart_8250_port *priv)
+{
+	up->dma->rx_chan_id = priv->dma->rx_chan_id;
+	up->dma->tx_chan_id = priv->dma->tx_chan_id;
+
+	if (priv->dma->fn)
+		up->dma->fn = priv->dma->fn;
+
+	if (priv->dma->txconf.dst_maxburst > 0)
+		up->dma->txconf.dst_maxburst = priv->dma->txconf.dst_maxburst;
+
+	if (priv->dma->rxconf.src_maxburst > 0)
+		up->dma->rxconf.src_maxburst = priv->dma->rxconf.src_maxburst;
+
+	if (priv->dma->tx_param)
+		up->dma->tx_param = priv->dma->tx_param;
+
+	if (priv->dma->rx_param)
+		up->dma->rx_param = priv->dma->rx_param;
+
+	return;
+}
+
+
+static int dw8250_probe_mfd_dev(struct platform_device *pdev,
+				struct uart_8250_port *up,
+				struct dw8250_data *data)
+{
+	struct plat_serial8250_port *pdata;
+	struct uart_8250_port *priv;
+	struct uart_port *p = &up->port;
+
+	/* Bail out if the device doesn't contain platform data */
+	if (NULL == pdev->dev.platform_data) {
+		dev_err(&pdev->dev, "no MFD platform data found!\n");
+		return -ENODEV;
+	}
+	pdata = pdev->dev.platform_data;
+
+	/* Bail out if there is no clock source assignment in platform data */
+	if (0 == pdata->uartclk) {
+		dev_err(&pdev->dev, "no uartclk found.\n");
+		return -ENODEV;
+	}
+	p->uartclk = pdata->uartclk;
+	dw8250_setup_port(up);
+
+	if (pdata->iotype) {
+		p->iotype = pdata->iotype;
+		if (p->iotype == UPIO_MEM32) {
+			p->serial_in = dw8250_serial_in32;
+			p->serial_out = dw8250_serial_out32;
+		}
+	}
+
+	if (pdata->regshift)
+		p->regshift = pdata->regshift;
+
+	p->set_termios = dw8250_set_termios;
+
+	up->dma = &data->dma;
+
+	if (pdata->dma_mapbase)
+		up->dma->mapbase = pdata->dma_mapbase;
+
+	if (pdata->private_data)
+		priv = pdata->private_data;
+	else
+		goto probe_mfd_dev_done;
+
+	if (priv->port.fifosize > 0)
+		p->fifosize = priv->port.fifosize;
+
+	if (priv->tx_loadsz > 0)
+		up->tx_loadsz = priv->tx_loadsz;
+	else
+		up->tx_loadsz = p->fifosize;
+
+	/* Override capabilities if found */
+	if (priv->capabilities > 0)
+		up->capabilities = priv->capabilities;
+
+	/* Override DMA structure if found */
+	if (priv->dma)
+		_dw8250_mfd_dma_probe(up, priv);
+
+probe_mfd_dev_done:
+	return 0;
+}
 
 static int dw8250_probe_acpi(struct uart_8250_port *up,
 			     struct dw8250_data *data)
@@ -287,6 +387,7 @@ static int dw8250_probe_acpi(struct uart_8250_port *up,
 
 	p->iotype = UPIO_MEM32;
 	p->serial_in = dw8250_serial_in32;
+	p->set_termios = dw8250_set_termios;
 	p->serial_out = dw8250_serial_out32;
 	p->regshift = 2;
 
@@ -350,12 +451,17 @@ static int dw8250_probe(struct platform_device *pdev)
 	uart.port.serial_out = dw8250_serial_out;
 	uart.port.private_data = data;
 
+	dw8250_setup_port(&uart);
 	if (pdev->dev.of_node) {
 		err = dw8250_probe_of(&uart.port, data);
 		if (err)
 			return err;
 	} else if (ACPI_HANDLE(&pdev->dev)) {
 		err = dw8250_probe_acpi(&uart, data);
+		if (err)
+			return err;
+	} else if (strcmp((pdev->dev.type)->name, "mfd_device") == 0) {
+		err = dw8250_probe_mfd_dev(pdev, &uart, data);
 		if (err)
 			return err;
 	} else {

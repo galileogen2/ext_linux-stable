@@ -622,6 +622,16 @@ config AB3100_CORE
 	  LEDs, vibrator, system power and temperature, power management
 	  and ALSA sound.
 
+config MFD_INTEL_QUARK_HSUART_DMA
+	tristate "Intel Quark MFD for High Speed UART with DMA Engine"
+	depends on PCI
+	select MFD_CORE
+	help
+	  This MFD supports High Speed UART PCI device with its DMA engine
+	  companion in Intel Quark product series such as Intel Quark X1000.
+	  Its role is spliting the 2 devices in an orderly manner for their
+	  respective driver.
+
 config AB3100_OTP
 	tristate "ST-Ericsson AB3100 OTP functions"
 	depends on AB3100_CORE

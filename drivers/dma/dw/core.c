@@ -902,7 +902,6 @@ slave_sg_fromdev_fill_desc:
 			}
 			desc->lli.ctlhi = dlen >> reg_width;
 			desc->len = dlen;
-
 			if (!first) {
 				first = desc;
 			} else {
@@ -1513,10 +1512,15 @@ int dw_dma_probe(struct dw_dma_chip *chip, struct dw_dma_platform_data *pdata)
 		return -ENOMEM;
 
 	dw->clk = devm_clk_get(chip->dev, "hclk");
-	if (IS_ERR(dw->clk))
-		return PTR_ERR(dw->clk);
-	clk_prepare_enable(dw->clk);
-
+	if (IS_ERR(dw->clk)) {
+		if (PTR_ERR(dw->clk) == -ENOENT)
+			dw->clk = NULL;
+		else
+			return PTR_ERR(dw->clk);
+	}
+	err = clk_prepare_enable(dw->clk);
+	if (err)
+		return err;
 	dw->regs = chip->regs;
 	chip->dw = dw;
 
@@ -1613,10 +1617,18 @@ int dw_dma_probe(struct dw_dma_chip *chip, struct dw_dma_platform_data *pdata)
 			dwc->block_size = pdata->block_size;
 
 			/* Check if channel supports multi block transfer */
-			channel_writel(dwc, LLP, 0xfffffffc);
-			dwc->nollp =
-				(channel_readl(dwc, LLP) & 0xfffffffc) == 0;
-			channel_writel(dwc, LLP, 0);
+			/*if nollp flag is not set, it causes race condition
+			as this flag used in dwc_do_start*/
+
+			if (pdata->nollp[i] == true) {
+				dwc->nollp = 1;
+			} else {
+				channel_writel(dwc, LLP, 0xfffffffc);
+				dwc->nollp =
+					(channel_readl(dwc, LLP)
+						& 0xfffffffc) == 0;
+				channel_writel(dwc, LLP, 0);
+			}
 		}
 	}
 

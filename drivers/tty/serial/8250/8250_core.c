@@ -1547,7 +1547,7 @@ int serial8250_handle_irq(struct uart_port *port, unsigned int iir)
 	int dma_err = 0;
 	u64 tsc = 0;
 
-if (up->bound_j1708)
+	if (up->bound_j1708)
 		rdtscll(tsc);
 
 	if (iir & UART_IIR_NO_INT)
@@ -1559,7 +1559,7 @@ if (up->bound_j1708)
 
 	DEBUG_INTR("status = %x...", status);
 
-if (up->bound_j1708) {
+	if (up->bound_j1708) {
 		serial8250_rx_j1708_char(up, status, tsc);
 		spin_unlock_irqrestore(&port->lock, flags);
 		return 1;
@@ -2409,7 +2409,7 @@ serial8250_do_set_termios(struct uart_port *port, struct ktermios *termios,
 	 * have sufficient FIFO entries for the latency of the remote
 	 * UART to respond.  IOW, at least 32 bytes of FIFO.
 	 */
-	if (up->capabilities & UART_CAP_AFE && port->fifosize >= 32) {
+	if (up->capabilities & UART_CAP_AFE) {
 		up->mcr &= ~UART_MCR_AFE;
 		if (termios->c_cflag & CRTSCTS)
 			up->mcr |= UART_MCR_AFE;
@@ -2604,11 +2604,11 @@ static int serial8250_request_std_resource(struct uart_8250_port *up)
 {
 	unsigned int size = serial8250_port_size(up);
 	struct uart_port *port = &up->port;
+	int ret = 0;
 
-if (up->bound_j1708)
+	if (up->bound_j1708)
 		return 0;
 
-	int ret = 0;
 
 	switch (port->iotype) {
 	case UPIO_AU:
