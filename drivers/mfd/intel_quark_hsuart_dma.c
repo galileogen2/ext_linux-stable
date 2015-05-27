@@ -21,7 +21,7 @@
 #include <linux/dw_dmac.h>
 #include <uapi/linux/serial_reg.h>
 #include <uapi/linux/serial_core.h>
-#include <../tty/serial/8250/8250.h>
+#include "../tty/serial/8250/8250.h"
 
 static bool uart1_dma = true;
 module_param(uart1_dma, bool, 0);
