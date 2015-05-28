@@ -240,6 +240,9 @@ static int intel_qrk_plat_clanton_peak_probe(struct platform_device *pdev)
 			goto end;
 	} else if (spi_bbang) {
 		ret = register_bitbanged_spi(0);
+		if (ret)
+			goto end;
+		ret = register_bitbanged_spi(1);
 	}
 
 	if (0 == spi_eight_dev) {
