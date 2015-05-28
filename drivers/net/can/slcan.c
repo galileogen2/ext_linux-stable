@@ -52,6 +52,7 @@
 #include <linux/delay.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
+#include <linux/workqueue.h>
 #include <linux/can.h>
 #include <linux/can/skb.h>
 
@@ -101,6 +102,7 @@ struct slcan {
 	struct net_device	*dev[MUX_NETDEV_MAX];
 	/* easy for intr handling    */
 	spinlock_t		lock;
+	struct work_struct	tx_work;	/* Flushes transmit buffer   */
 
 	/* These are pointers to the malloc()ed frame buffers. */
 	unsigned char		rbuff[SLC_MTU];	/* receiver buffer	     */
@@ -348,17 +350,17 @@ static void slc_encaps(struct slcan_channel *sl_chan, struct can_frame *cf,
 	sl_chan->device->dev[dev_idx]->stats.tx_bytes += cf->can_dlc;
 }
 
-/* Called by the driver when there's room for more data.  If we have
- * more packets to send, we send them here.
- */
-static void slcan_write_wakeup(struct tty_struct *tty)
+/* Write out any remaining transmit buffer. Scheduled when tty is writable */
+static void slcan_transmit(struct work_struct *work)
 {
+	struct slcan *sl = container_of(work, struct slcan, tx_work);
 	int actual, i;
-	struct slcan *sl = (struct slcan *) tty->disc_data;
 	struct slcan_channel *sl_chan;
 
+	spin_lock_bh(&sl->lock);
 	/* First make sure we're connected. */
 	if (!sl->tty || sl->magic != SLCAN_MAGIC) {
+		spin_unlock_bh(&sl->lock);
 		return;
 	}
 
@@ -368,24 +370,34 @@ static void slcan_write_wakeup(struct tty_struct *tty)
 			continue;
 
 		sl_chan = netdev_priv(sl->dev[i]);
-		spin_lock(&sl->lock);
+
 		if (sl_chan->xleft <= 0)  {
 			/* Now serial buffer is almost free & we can start
 			 * transmission of another packet
 			 */
 			sl->dev[i]->stats.tx_packets++;
-			clear_bit(TTY_DO_WRITE_WAKEUP, &tty->flags);
-			spin_unlock(&sl->lock);
+			clear_bit(TTY_DO_WRITE_WAKEUP, &sl->tty->flags);
 			netif_wake_queue(sl->dev[i]);
 			continue;
 		}
 
-		actual = tty->ops->write(tty, sl_chan->xhead,
+		actual = sl->tty->ops->write(sl->tty, sl_chan->xhead,
 					sl_chan->xleft);
 		sl_chan->xleft -= actual;
 		sl_chan->xhead += actual;
-		spin_unlock(&sl->lock);
 	}
+	spin_unlock_bh(&sl->lock);
+
+}
+
+/*
+ * Called by the driver when there's room for more data.
+ * Schedule the transmit.
+ */
+static void slcan_write_wakeup(struct tty_struct *tty)
+{
+	struct slcan *sl = (struct slcan *) tty->disc_data;
+	schedule_work(&sl->tx_work);
 }
 
 /* Send a can_frame to a TTY queue. */
@@ -633,6 +645,7 @@ static struct slcan *slc_alloc(dev_t line)
 	sl->magic = SLCAN_MAGIC;
 
 	spin_lock_init(&sl->lock);
+	INIT_WORK(&sl->tx_work, slcan_transmit);
 	slcan_devs[i] = sl;
 
 	return sl;
@@ -743,6 +756,8 @@ static void slcan_close(struct tty_struct *tty)
 	tty->disc_data = NULL;
 	sl->tty = NULL;
 	spin_unlock_bh(&sl->lock);
+
+	flush_work(&sl->tx_work);
 
 	/* Flush network side */
 	for (i = 0; i < muxnetdevs; i++) {
