@@ -75,6 +75,15 @@ struct imr_regs {
 #define phys_to_imr(x)	((x) >> IMR_SHIFT)
 
 /**
+ * module parameter
+ *
+ * If imr_lock is true, lock all the IMRs.
+ */
+static int imr_lock = 1;
+module_param(imr_lock, int, S_IRUGO|S_IWUSR);
+MODULE_PARM_DESC(imr_lock, "lock all IMRs (default=on)");
+
+/**
  * imr_is_enabled - true if an IMR is enabled false otherwise.
  *
  * Determines if an IMR is enabled based on address range and read/write
@@ -570,6 +579,30 @@ static inline int imr_clear(int reg)
 }
 
 /**
+ * intel_qrk_imr_lockall
+ *
+ * lock up all un-locked IMRs
+ */
+static void intel_qrk_imr_lockall(struct imr_device *idev)
+{
+	int i = 0;
+	uint32_t temp_addr;
+	struct imr_regs imr;
+
+	/* Cycle through IMRs locking whichever are unlocked */
+	for (i = 0; i < idev->max_imr; i++) {
+		imr_read(idev, i, &imr);
+
+		temp_addr = imr.addr_lo;
+		if (!(temp_addr & IMR_LOCK)) {
+			pr_debug("%s: locking IMR %d\n", __func__, i);
+			temp_addr |= IMR_LOCK;
+			imr_write(idev, i, &imr, true);
+		}
+	}
+}
+
+/**
  * imr_fixup_memmap - Tear down IMRs used during bootup.
  *
  * BIOS and Grub both setup IMRs around compressed kernel, initrd memory
@@ -638,6 +671,11 @@ static int __init imr_init(void)
 	if (ret != 0)
 		pr_warn("debugfs register failed!\n");
 	imr_fixup_memmap(idev);
+
+	if (imr_lock) {
+		intel_qrk_imr_lockall(idev);
+	}
+
 	return 0;
 }
 
