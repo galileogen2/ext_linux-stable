@@ -336,11 +336,11 @@ static struct irq_chip sch_irq_chip = {
 	.irq_set_wake	= sch_gpio_resume_irq_set_wake,
  };
 
-static void sch_gpio_irqs_init(struct sch_gpio *sch, unsigned int num)
+static void sch_gpio_irqs_init(struct sch_gpio *sch)
 {
 	unsigned int i;
 
-	for (i = 0; i < num; i++) {
+	for (i = 0; i < sch->chip.ngpio; i++) {
 		irq_set_chip_data(i + sch->irq_base, sch);
 		irq_set_chip_and_handler_name(i + sch->irq_base, &sch_irq_chip,
 					handle_edge_irq, "sch_gpio_irq_chip");
@@ -404,7 +404,7 @@ static irqreturn_t sch_gpio_irq_handler(int irq, void *dev_id)
 {
 	struct sch_gpio *sch = dev_id;
 	int ret = IRQ_NONE;
-	/* In 3.14, both the core and resume banks are consolidated,
+	/* Both the core and resume banks are consolidated,
 	 * but the physical registers are still separated. In order
 	 * to access the status of resume bank irq status, we need
 	 * recalculate the irq base for resume bank
@@ -514,7 +514,7 @@ static int sch_gpio_probe(struct platform_device *pdev)
 			goto err_sch_request_irq;
 		}
 
-		sch_gpio_irqs_init(sch, sch->chip.ngpio);
+		sch_gpio_irqs_init(sch);
 	}
 
 	platform_set_drvdata(pdev, sch);
