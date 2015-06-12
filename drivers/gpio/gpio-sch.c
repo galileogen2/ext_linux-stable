@@ -349,11 +349,11 @@ static void sch_gpio_irqs_init(struct sch_gpio *sch)
 	}
 }
 
-static void sch_gpio_irqs_deinit(struct sch_gpio *sch, unsigned int num)
+static void sch_gpio_irqs_deinit(struct sch_gpio *sch)
 {
 	unsigned int i;
 
-	for (i = 0; i < num; i++) {
+	for (i = 0; i < sch->chip.ngpio; i++) {
 		irq_set_chip_data(i + sch->irq_base, 0);
 		irq_set_chip_and_handler_name(i + sch->irq_base, 0, 0, 0);
 	}
@@ -533,7 +533,7 @@ static int sch_gpio_remove(struct platform_device *pdev)
 	struct sch_gpio *sch = platform_get_drvdata(pdev);
 
 	if (sch->irq_support) {
-		sch_gpio_irqs_deinit(sch, sch->chip.ngpio);
+		sch_gpio_irqs_deinit(sch);
 
 		if (sch->irq >= 0)
 			free_irq(sch->irq, sch);
