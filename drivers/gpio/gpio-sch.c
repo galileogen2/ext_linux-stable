@@ -43,6 +43,8 @@
 #define CGNMIEN	0x40
 #define RGNMIEN	0x44
 
+#define RESUME_WELL_OFFSET	0x20
+
 /* Maximum number of GPIOS supported by this driver */
 #define MAX_GPIO_IRQS	9
 
@@ -81,7 +83,7 @@ static unsigned sch_gpio_offset(struct sch_gpio *sch, unsigned gpio,
 
 	if (gpio >= sch->resume_base) {
 		gpio -= sch->resume_base;
-		base += 0x20;
+		base += RESUME_WELL_OFFSET;
 	}
 
 	return base + reg + gpio / 8;
@@ -357,29 +359,25 @@ static void sch_gpio_irqs_deinit(struct sch_gpio *sch, unsigned int num)
 	}
 }
 
-static void sch_gpio_irq_disable_all(struct sch_gpio *sch, unsigned int num)
+static void sch_gpio_irq_disable_all(struct sch_gpio *sch)
 {
-	unsigned long flags;
-	unsigned int gpio_num;
+	/* Disable core well interrupts */
+	outl(0x00, sch->iobase + GTPE);
+	outl(0x00, sch->iobase + GTNE);
+	outl(0x00, sch->iobase + GGPE);
+	outl(0x00, sch->iobase + GSMI);
+	outl(0x00, sch->iobase + CGNMIEN);
 
-	spin_lock_irqsave(&sch->lock, flags);
+	/* Disable resume well interrupts */
+	outl(0x00, sch->iobase + GTPE + RESUME_WELL_OFFSET);
+	outl(0x00, sch->iobase + GTNE + RESUME_WELL_OFFSET);
+	outl(0x00, sch->iobase + GGPE + RESUME_WELL_OFFSET);
+	outl(0x00, sch->iobase + GSMI + RESUME_WELL_OFFSET);
+	outl(0x00, sch->iobase + RGNMIEN);
 
-	for (gpio_num = 0; gpio_num < num; gpio_num++) {
-		sch_gpio_reg_set(&sch->chip, gpio_num, GTPE, 0);
-		sch_gpio_reg_set(&sch->chip, gpio_num, GTNE, 0);
-		sch_gpio_reg_set(&sch->chip, gpio_num, GGPE, 0);
-		sch_gpio_reg_set(&sch->chip, gpio_num, GSMI, 0);
-
-		if (gpio_num >= sch->resume_base)
-			sch_gpio_reg_set(&sch->chip, gpio_num, RGNMIEN, 0);
-		else
-			sch_gpio_reg_set(&sch->chip, gpio_num, CGNMIEN, 0);
-
-		/* clear any pending interrupts */
-		sch_gpio_reg_set(&sch->chip, gpio_num, GTS, 1);
-	}
-
-	spin_unlock_irqrestore(&sch->lock, flags);
+	/* Clear any pending interrupts */
+	outl(0xFFFFFFFF, sch->iobase + GTS);
+	outl(0xFFFFFFFF, sch->iobase + GTS + RESUME_WELL_OFFSET);
 }
 
 static inline irqreturn_t do_serve_irq(int reg_status, unsigned int irq_base)
@@ -504,7 +502,7 @@ static int sch_gpio_probe(struct platform_device *pdev)
 		}
 
 		/* disable interrupts */
-		sch_gpio_irq_disable_all(sch, sch->chip.ngpio);
+		sch_gpio_irq_disable_all(sch);
 
 		err = request_irq(sch->irq, sch_gpio_irq_handler, IRQF_SHARED,
 				  KBUILD_MODNAME, sch);
