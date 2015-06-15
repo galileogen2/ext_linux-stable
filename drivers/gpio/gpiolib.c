@@ -1121,7 +1121,7 @@ int gpiod_set_drive(struct gpio_desc *desc, unsigned mode)
 	unsigned long		flags;
 	struct gpio_chip	*chip;
 	int			status = -EINVAL;
-	unsigned gpio;
+	unsigned gpio = ~0;
 	spin_lock_irqsave(&gpio_lock, flags);
 
 	if (!desc || !desc->chip) {
