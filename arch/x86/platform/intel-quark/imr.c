@@ -586,7 +586,7 @@ static inline int imr_clear(int reg)
 static void __init imr_fixup_memmap(struct imr_device *idev)
 {
 	phys_addr_t base = virt_to_phys(&_text);
-	size_t size = virt_to_phys(&__end_rodata) - base;
+	size_t size = virt_to_phys(&__init_begin) - base;
 	int i;
 	int ret;
 
@@ -597,15 +597,15 @@ static void __init imr_fixup_memmap(struct imr_device *idev)
 	/*
 	 * Setup a locked IMR around the physical extent of the kernel
 	 * from the beginning of the .text secton to the end of the
-	 * .rodata section as one physically contiguous block.
+	 * .init_begin section as one physically contiguous block.
 	 */
 	ret = imr_add_range(base, size, IMR_CPU, IMR_CPU, true);
 	if (ret < 0) {
 		pr_err("unable to setup IMR for kernel: (%p - %p)\n",
-			&_text, &__end_rodata);
+			&_text, &__init_begin);
 	} else {
-		pr_info("protecting kernel .text - .rodata: %zu KiB (%p - %p)\n",
-			size / 1024, &_text, &__end_rodata);
+		pr_info("protecting kernel .text - .init_begin: %zu KiB (%p - %p)\n",
+			size / 1024, &_text, &__init_begin);
 	}
 
 }
