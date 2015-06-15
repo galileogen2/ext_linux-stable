@@ -400,6 +400,9 @@ int imr_add_range(phys_addr_t base, size_t size,
 		if (ret)
 			goto failed;
 
+		if (imr.addr_lo & IMR_LOCK)
+			continue;
+
 		/* Find overlap @ base or end of requested range. */
 		ret = -EINVAL;
 		if (imr_is_enabled(&imr)) {
@@ -444,7 +447,6 @@ failed:
 	mutex_unlock(&idev->lock);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(imr_add_range);
 
 /**
  * __imr_remove_range - delete an Isolated Memory Region.
@@ -558,7 +560,6 @@ int imr_remove_range(phys_addr_t base, size_t size)
 {
 	return __imr_remove_range(-1, base, size);
 }
-EXPORT_SYMBOL_GPL(imr_remove_range);
 
 /**
  * imr_clear - delete an Isolated Memory Region by index
