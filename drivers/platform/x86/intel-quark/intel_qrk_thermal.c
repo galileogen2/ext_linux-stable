@@ -122,13 +122,17 @@ static int intel_qrk_thermal_get_temp(struct thermal_zone_device *tz,
 				unsigned long *temp)
 {
 	iosf_mbi_read(SB_ID_RMU, THRM_CTRL_READ, THRM_TEMP_REG, (u32 *)temp);
-	*temp -= RAW2CELSIUS_DIFF;
+
+	/* THRM_SENSR_TEMP[7:0] */
+	*temp &= 0x000000FF;
 
 	/* Clip to unsigned output value if sensor is reporting sub-zero */
-	if ((int)*temp < 0)
+	if (*temp <= RAW2CELSIUS_DIFF) 
 		*temp = 0;
+	else 
+		*temp -= RAW2CELSIUS_DIFF;
 
-	*temp = MCELSIUS(*temp&0x000000FF);
+	*temp = MCELSIUS(*temp);
 
 	return 0;
 }
