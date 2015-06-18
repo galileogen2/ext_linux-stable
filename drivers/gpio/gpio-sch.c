@@ -56,9 +56,9 @@ struct sch_gpio_context {
 	u32 cglvl;
 	u32 cgsmi;
 	u32 cgnmien;
-	/* Well interrupt trigger enable */
-	u32 gtpe;
-	u32 gtne;
+	/* cache irq trigger setup */
+	DECLARE_BITMAP(gtpe_irqs, MAX_GPIO);
+	DECLARE_BITMAP(gtne_irqs, MAX_GPIO);
 };
 
 struct sch_gpio {
@@ -211,9 +211,9 @@ static void sch_gpio_irq_enable(struct irq_data *d)
 
 	spin_lock_irqsave(&sch->lock, flags);
 
-	if (regs->gtpe & BIT(gpio_num))
+	if (test_bit(gpio_num, regs->gtpe_irqs))
 		sch_gpio_reg_set(&sch->chip, gpio_num, GTPE, 1);
-	if (regs->gtne & BIT(gpio_num))
+	if (test_bit(gpio_num, regs->gtne_irqs))
 		sch_gpio_reg_set(&sch->chip, gpio_num, GTNE, 1);
 	sch_gpio_reg_set(&sch->chip, gpio_num, GGPE, 1);
 
@@ -262,33 +262,39 @@ static int sch_gpio_irq_type(struct irq_data *d, unsigned type)
 	case IRQ_TYPE_EDGE_RISING:
 		sch_gpio_reg_set(&sch->chip, gpio_num, GTPE, 1);
 		sch_gpio_reg_set(&sch->chip, gpio_num, GTNE, 0);
+		/* cache trigger setup */
+		set_bit(gpio_num, regs->gtpe_irqs);
+		clear_bit(gpio_num, regs->gtne_irqs);
 		break;
 
 	case IRQ_TYPE_EDGE_FALLING:
 		sch_gpio_reg_set(&sch->chip, gpio_num, GTNE, 1);
 		sch_gpio_reg_set(&sch->chip, gpio_num, GTPE, 0);
+		/* cache trigger setup */
+		set_bit(gpio_num, regs->gtne_irqs);
+		clear_bit(gpio_num, regs->gtpe_irqs);
 		break;
 
 	case IRQ_TYPE_EDGE_BOTH:
 		sch_gpio_reg_set(&sch->chip, gpio_num, GTPE, 1);
 		sch_gpio_reg_set(&sch->chip, gpio_num, GTNE, 1);
+		/* cache trigger setup */
+		set_bit(gpio_num, regs->gtpe_irqs);
+		set_bit(gpio_num, regs->gtne_irqs);
 		break;
 
 	case IRQ_TYPE_NONE:
 		sch_gpio_reg_set(&sch->chip, gpio_num, GTPE, 0);
 		sch_gpio_reg_set(&sch->chip, gpio_num, GTNE, 0);
+		/* cache trigger setup */
+		clear_bit(gpio_num, regs->gtpe_irqs);
+		clear_bit(gpio_num, regs->gtne_irqs);
 		break;
 
 	default:
 		spin_unlock_irqrestore(&sch->lock, flags);
 		return -EINVAL;
 	}
-
-	/* cache trigger setup */
-	regs->gtpe &= ~BIT(gpio_num);
-	regs->gtne &= ~BIT(gpio_num);
-	regs->gtpe |= inl(sch->iobase + GTPE);
-	regs->gtne |= inl(sch->iobase + GTNE);
 
 	spin_unlock_irqrestore(&sch->lock, flags);
 
