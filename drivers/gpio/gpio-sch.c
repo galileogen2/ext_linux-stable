@@ -31,6 +31,7 @@
 #include <linux/irq.h>
 
 #include <linux/gpio.h>
+#include <linux/uio_driver.h>
 
 #define GEN	0x00
 #define GIO	0x04
@@ -73,6 +74,7 @@ struct sch_gpio {
 	int irq_base;
 	bool irq_support;
 	DECLARE_BITMAP(wake_irqs, MAX_GPIO);
+	struct uio_info info;
 };
 
 #define to_sch_gpio(gc)		container_of(gc, struct sch_gpio, chip)
@@ -520,8 +522,24 @@ static int sch_gpio_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, sch);
 
+	/* UIO */
+	sch->info.port[0].name = "gpio_regs";
+	sch->info.port[0].start = res->start;
+	sch->info.port[0].size = resource_size(res);
+	sch->info.port[0].porttype = UIO_PORT_X86;
+	sch->info.name = "sch_gpio";
+	sch->info.version = "0.0.1";
+
+	if (uio_register_device(&pdev->dev, &sch->info))
+		goto err_sch_uio_register;
+
+	pr_info("%s UIO port addr 0x%04x size %lu porttype %d\n",
+		__func__, (unsigned int)sch->info.port[0].start,
+		sch->info.port[0].size, sch->info.port[0].porttype);
+
 	return 0;
 
+err_sch_uio_register:
 err_sch_request_irq:
 	irq_free_descs(sch->irq_base, sch->chip.ngpio);
 
@@ -534,6 +552,8 @@ err_sch_intr_chip:
 static int sch_gpio_remove(struct platform_device *pdev)
 {
 	struct sch_gpio *sch = platform_get_drvdata(pdev);
+
+	uio_unregister_device(&sch->info);
 
 	if (sch->irq_support) {
 		if (sch->irq >= 0)
