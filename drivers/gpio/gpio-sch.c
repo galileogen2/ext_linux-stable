@@ -424,7 +424,8 @@ static int sch_gpio_probe(struct platform_device *pdev)
 {
 	struct sch_gpio *sch;
 	struct resource *res;
-	int err;
+	int err = 0;
+	int ret;
 
 	sch = devm_kzalloc(&pdev->dev, sizeof(*sch), GFP_KERNEL);
 	if (!sch)
@@ -544,13 +545,14 @@ err_sch_request_irq:
 	irq_free_descs(sch->irq_base, sch->chip.ngpio);
 
 err_sch_intr_chip:
-	gpiochip_remove(&sch->chip);
+	ret = gpiochip_remove(&sch->chip);
 
 	return err;
 }
 
 static int sch_gpio_remove(struct platform_device *pdev)
 {
+	int ret;
 	struct sch_gpio *sch = platform_get_drvdata(pdev);
 
 	uio_unregister_device(&sch->info);
@@ -562,9 +564,9 @@ static int sch_gpio_remove(struct platform_device *pdev)
 		irq_free_descs(sch->irq_base, sch->chip.ngpio);
 	}
 
-	gpiochip_remove(&sch->chip);
+	ret = gpiochip_remove(&sch->chip);
 
-	return 0;
+	return ret;
 }
 
 /*
