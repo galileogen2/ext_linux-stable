@@ -423,7 +423,7 @@ static irqreturn_t sch_gpio_irq_handler(int irq, void *dev_id)
 static int sch_gpio_probe(struct platform_device *pdev)
 {
 	struct sch_gpio *sch;
-	struct resource *res;
+	struct resource *res, *res_irq;
 	int err = 0;
 	int ret;
 
@@ -439,8 +439,9 @@ static int sch_gpio_probe(struct platform_device *pdev)
 				 pdev->name))
 		return -EBUSY;
 
-	sch->irq = platform_get_irq(pdev, 0);
-	if (sch->irq >= 0) {
+	res_irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
+	if (res_irq) {
+		sch->irq = res_irq->start;
 		sch->irq_support = true;
 	} else {
 		dev_warn(&pdev->dev,
@@ -510,8 +511,10 @@ static int sch_gpio_probe(struct platform_device *pdev)
 		/* disable interrupts */
 		sch_gpio_irq_disable_all(sch);
 
-		err = request_irq(sch->irq, sch_gpio_irq_handler, IRQF_SHARED,
-				  KBUILD_MODNAME, sch);
+		err = devm_request_irq(&pdev->dev, sch->irq,
+				       sch_gpio_irq_handler, IRQF_SHARED,
+				       KBUILD_MODNAME, sch);
+
 		if (err) {
 			dev_err(&pdev->dev,
 				"failed to request IRQ\n");
@@ -557,12 +560,8 @@ static int sch_gpio_remove(struct platform_device *pdev)
 
 	uio_unregister_device(&sch->info);
 
-	if (sch->irq_support) {
-		if (sch->irq >= 0)
-			free_irq(sch->irq, sch);
-
+	if (sch->irq_support)
 		irq_free_descs(sch->irq_base, sch->chip.ngpio);
-	}
 
 	ret = gpiochip_remove(&sch->chip);
 
