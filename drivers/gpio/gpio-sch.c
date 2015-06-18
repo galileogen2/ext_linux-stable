@@ -2,6 +2,7 @@
  * GPIO interface for Intel Poulsbo SCH
  *
  *  Copyright (c) 2010 CompuLab Ltd
+ *  Copyright (c) 2014-2015 Intel Corporation
  *  Author: Denis Turischev <denis@compulab.co.il>
  *
  *  This program is free software; you can redistribute it and/or modify
