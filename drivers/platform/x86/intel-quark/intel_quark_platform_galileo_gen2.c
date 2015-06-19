@@ -42,6 +42,8 @@
  ******************************************************************************/
 
 #define DRIVER_NAME "GalileoGen2"
+#define GPIO_RESTRICT_NAME	"qrk-gpio-restrict-sc"
+#define LPC_SCH_SPINAME		"spi-lpc-sch"
 
 #define GPIO_PCAL9555A_EXP2_INT		9
 
@@ -270,14 +272,19 @@ static struct gpio reserved_gpios_gen2[] = {
 	},
 };
 
-static int intel_quark_galileo_gen2_init(struct platform_device *pdev)
+/**
+ * intel_qrk_gpio_restrict_probe
+ *
+ * Make GPIOs pertaining to Firmware inaccessible by requesting them.  The
+ * GPIOs are never released nor accessed by this driver.
+ *
+ * Registers devices which are dependent on this GPIO driver
+ */
+static int intel_qrk_gpio_restrict_probe(struct platform_device *pdev)
 {
 	int ret = 0;
 	struct i2c_adapter *i2c_adap = NULL;
 	struct i2c_client *client = NULL;
-
-	/* Assign GIP driver handle for board-specific settings */
-	intel_qrk_gip_get_pdata = galileo_gen2_gip_get_pdata;
 
 	/* Need to tell the PCA953X driver which GPIO IRQ to use for signalling
 	 * interrupts.  We can't get the IRQ until the GPIO driver is loaded.
@@ -290,11 +297,10 @@ static int intel_quark_galileo_gen2_init(struct platform_device *pdev)
 		return -EPROBE_DEFER;
 	}
 
-	ret = gpio_request_array(reserved_gpios_gen2, ARRAY_SIZE(reserved_gpios_gen2));
+	ret = gpio_request_array(reserved_gpios_gen2,
+				 ARRAY_SIZE(reserved_gpios_gen2));
 	if (ret) {
-			pr_info("%s: gpio_request_array failure. Deferring..\n",
-				__func__);
-			ret = -EPROBE_DEFER;
+		dev_err(&client->dev, "failed to request reserved gpios\n");
 		goto end;
 	}
 
@@ -345,13 +351,30 @@ static int intel_quark_galileo_gen2_init(struct platform_device *pdev)
 	}
 
 	ret = intel_qrk_spi_add_onboard_devs_gen2();
-
 end:
 	i2c_put_adapter(i2c_adap);
+
 	return ret;
 }
 
-static int intel_quark_galileo_gen2_exit(struct platform_device *pdev)
+static struct platform_driver gpio_restrict_pdriver = {
+	.driver		= {
+		.name	= GPIO_RESTRICT_NAME,
+		.owner	= THIS_MODULE,
+	},
+	.probe		= intel_qrk_gpio_restrict_probe,
+};
+
+static int intel_quark_platform_galileo_gen2_probe(struct platform_device *pdev)
+{
+	/* Assign GIP driver handle for board-specific settings */
+	intel_qrk_gip_get_pdata = galileo_gen2_gip_get_pdata;
+
+	/* gpio */
+	return platform_driver_register(&gpio_restrict_pdriver);
+}
+
+static int intel_quark_platform_galileo_gen2_remove(struct platform_device *pdev)
 {
 	return 0;
 }
@@ -361,9 +384,10 @@ static struct platform_driver quark_galileo_platform_driver = {
 		.name	= DRIVER_NAME,
 		.owner	= THIS_MODULE,
 	},
-	.probe		= intel_quark_galileo_gen2_init,
-	.remove		= intel_quark_galileo_gen2_exit,
+	.probe		= intel_quark_platform_galileo_gen2_probe,
+	.remove		= intel_quark_platform_galileo_gen2_remove,
 };
+
 module_platform_driver(quark_galileo_platform_driver);
 
 MODULE_AUTHOR("Bryan O'Donoghue <bryan.odonoghue@intel.com>");

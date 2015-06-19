@@ -63,6 +63,12 @@ struct sch_gpio_context {
 	DECLARE_BITMAP(gtne_irqs, MAX_GPIO);
 };
 
+static void qrk_gpio_restrict_release(struct device *dev) {}
+static struct platform_device qrk_gpio_restrict_pdev = {
+	.name	= "qrk-gpio-restrict-nc",
+	.dev.release = qrk_gpio_restrict_release,
+};
+
 struct sch_gpio {
 	struct gpio_chip chip;
 	struct sch_gpio_context context;
@@ -541,8 +547,13 @@ static int sch_gpio_probe(struct platform_device *pdev)
 		__func__, (unsigned int)sch->info.port[0].start,
 		sch->info.port[0].size, sch->info.port[0].porttype);
 
+	err = platform_device_register(&qrk_gpio_restrict_pdev);
+	if (err < 0)
+		goto err_sch_gpio_device_register;
+
 	return 0;
 
+err_sch_gpio_device_register:
 err_sch_uio_register:
 err_sch_request_irq:
 	irq_free_descs(sch->irq_base, sch->chip.ngpio);
@@ -562,6 +573,8 @@ static int sch_gpio_remove(struct platform_device *pdev)
 
 	if (sch->irq_support)
 		irq_free_descs(sch->irq_base, sch->chip.ngpio);
+
+	platform_device_unregister(&qrk_gpio_restrict_pdev);
 
 	ret = gpiochip_remove(&sch->chip);
 

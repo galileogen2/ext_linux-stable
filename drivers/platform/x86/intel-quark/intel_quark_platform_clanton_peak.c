@@ -55,6 +55,9 @@
 #define SPI1_CS2_GPIO				14
 #define SPI1_CS3_GPIO				15
 
+static int nc_gpio_reg;
+static int sc_gpio_reg;
+
 static int spi_eight_dev = 0;
 module_param(spi_eight_dev, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(spi_eight_dev,
@@ -230,26 +233,71 @@ err:
 	return ret;
 }
 
+static int intel_qrk_gpio_restrict_probe_nc(struct platform_device *pdev)
+{
+	int ret = 0;
+	nc_gpio_reg = 1;
+
+	if (spi_eight_dev) {
+		if (nc_gpio_reg == 1 && sc_gpio_reg == 1) {
+			ret = intel_qrk_spi_add_onboard_eight_devs();
+		}
+	} else if (spi_bbang) {
+		ret = register_bitbanged_spi(1);
+	}
+	return ret;
+}
+
+static int intel_qrk_gpio_restrict_probe_sc(struct platform_device *pdev)
+{
+	int ret = 0;
+	sc_gpio_reg = 1;
+
+	if (spi_eight_dev) {
+		if (nc_gpio_reg == 1 && sc_gpio_reg == 1) {
+			ret = intel_qrk_spi_add_onboard_eight_devs();
+		}
+	} else if (spi_bbang) {
+		ret = register_bitbanged_spi(0);
+	}
+	return ret;
+}
+
+static struct platform_driver gpio_restrict_pdriver_nc = {
+	.driver		= {
+		.name	= GPIO_RESTRICT_NAME_NC,
+		.owner	= THIS_MODULE,
+	},
+	.probe		= intel_qrk_gpio_restrict_probe_nc,
+};
+
+static struct platform_driver gpio_restrict_pdriver_sc = {
+	.driver		= {
+		.name	= GPIO_RESTRICT_NAME_SC,
+		.owner	= THIS_MODULE,
+	},
+	.probe		= intel_qrk_gpio_restrict_probe_sc,
+};
+
 static int intel_qrk_plat_clanton_peak_probe(struct platform_device *pdev)
 {
 	int ret = 0;
 
-	if (spi_eight_dev) {
-		ret = intel_qrk_spi_add_onboard_eight_devs();
-		if (ret)
-			goto end;
-	} else if (spi_bbang) {
-		ret = register_bitbanged_spi(0);
-		if (ret)
-			goto end;
-		ret = register_bitbanged_spi(1);
+	ret = platform_driver_register(&gpio_restrict_pdriver_nc);
+	if (ret) {
+		pr_err("%s: couldn't register %s platform driver\n",
+		       __func__, gpio_restrict_pdriver_nc.driver.name);
+	}
+
+	ret = platform_driver_register(&gpio_restrict_pdriver_sc);
+	if (ret) {
+		pr_err("%s: couldn't register %s platform driver\n",
+		       __func__, gpio_restrict_pdriver_sc.driver.name);
 	}
 
 	if (0 == spi_eight_dev) {
 		ret = intel_qrk_spi_add_onboard_devs();
 	}
-
-end:
 	return ret;
 }
 

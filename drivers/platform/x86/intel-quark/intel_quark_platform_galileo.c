@@ -38,6 +38,8 @@
 #include <linux/mfd/intel_qrk_gip_pdata.h>
 
 #define DRIVER_NAME "Galileo"
+#define GPIO_RESTRICT_NAME	"qrk-gpio-restrict-sc"
+#define LPC_SCH_SPINAME		"spi-lpc-sch"
 
 /* GPIO line used to detect the LSB of the Cypress i2c address */
 #define GPIO_CYPRESS_A0			7
@@ -283,14 +285,20 @@ static int intel_qrk_spi_add_onboard_devs(void)
 			ARRAY_SIZE(spi_onboard_devs));
 }
 
-static int intel_quark_galileo_gen1_init(struct platform_device *pdev)
+/**
+ * intel_qrk_gpio_restrict_probe
+ *
+ * Register devices that depend on GPIOs.
+ * Note this function makes extensive use of the probe deferral mechanism:
+ * gpio_request() for a GPIO that is not yet available returns
+ * -EPROBE_DEFER.
+ */
+static int intel_qrk_gpio_restrict_probe(struct platform_device *pdev)
 {
 	int ret = 0;
+	struct i2c_client *cypress = NULL, *eeprom = NULL;
 	static int spi_done;
 	static int gpios_done;
-
-	/* Assign GIP driver handle for board-specific settings */
-	intel_qrk_gip_get_pdata = galileo_gip_get_pdata;
 
 	if (spi_done)
 		goto gpios;
@@ -306,12 +314,8 @@ gpios:
 		goto i2c;
 
 	ret = gpio_request_array(reserved_gpios, ARRAY_SIZE(reserved_gpios));
-	if (ret) {
-		pr_info("%s: gpio_request_array failure. Deferring..\n",
-			__func__);
-		ret = -EPROBE_DEFER;
+	if (ret)
 		goto end;
-	}
 
 	probed_i2c_cypress.irq = gpio_to_irq(GPIO_CYPRESS_INT_S3);
 
@@ -330,7 +334,7 @@ i2c:
 					cypress_i2c_addr, cypress_i2c_probe);
 	strlcpy(probed_i2c_eeprom.type, "at24", I2C_NAME_SIZE);
 	eeprom = i2c_new_probed_device(i2c_adap, &probed_i2c_eeprom,
-				       eeprom_i2c_addr, eeprom_i2c_probe);
+					eeprom_i2c_addr, eeprom_i2c_probe);
 	i2c_put_adapter(i2c_adap);
 
 	if (NULL == cypress || NULL == eeprom) {
@@ -343,7 +347,37 @@ end:
 	return ret;
 }
 
-static int intel_quark_galileo_gen1_exit(struct platform_device *pdev)
+static struct platform_driver gpio_restrict_pdriver = {
+	.driver		= {
+		.name	= GPIO_RESTRICT_NAME,
+		.owner	= THIS_MODULE,
+	},
+	.probe		= intel_qrk_gpio_restrict_probe,
+};
+
+static int intel_quark_platform_galileo_probe(struct platform_device *pdev)
+{
+	int ret = 0;
+
+	/* Assign GIP driver handle for board-specific settings */
+	intel_qrk_gip_get_pdata = galileo_gip_get_pdata;
+
+	/* gpio */
+	ret = platform_driver_register(&gpio_restrict_pdriver);
+	if (ret)
+		goto end;
+
+#if 0
+	/* legacy SPI - TBD */
+	ret = platform_driver_register(&intel_qrk_plat_galileo_lpcspi_pdriver);
+	if (ret)
+		goto end;
+#endif
+end:
+	return ret;
+}
+
+static int intel_quark_platform_galileo_remove(struct platform_device *pdev)
 {
 	return 0;
 }
@@ -353,9 +387,10 @@ static struct platform_driver quark_galileo_platform_driver = {
 		.name	= DRIVER_NAME,
 		.owner	= THIS_MODULE,
 	},
-	.probe		= intel_quark_galileo_gen1_init,
-	.remove		= intel_quark_galileo_gen1_exit,
+	.probe		= intel_quark_platform_galileo_probe,
+	.remove		= intel_quark_platform_galileo_remove,
 };
+
 module_platform_driver(quark_galileo_platform_driver);
 
 MODULE_AUTHOR("Bryan O'Donoghue <bryan.odonoghue@intel.com>");

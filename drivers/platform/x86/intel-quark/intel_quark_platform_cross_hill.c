@@ -25,6 +25,8 @@
 #include <linux/spi/spi.h>
 
 #define DRIVER_NAME		"CrossHill"
+#define GPIO_RESTRICT_NAME_NC	"qrk-gpio-restrict-nc"
+#define GPIO_RESTRICT_NAME_SC	"qrk-gpio-restrict-sc"
 
 /*
  * GPIO numbers to use for reading 4-bit Blackburn Peak SPI daughterboard ID
@@ -39,6 +41,11 @@
  * GPIO number for eADC interrupt (MAX78M6610+LMU)
  */
 #define GPIO_78M6610_INT	2
+
+static int nc_gpio_reg;
+static int sc_gpio_reg;
+
+static int cross_hill_probe;
 
 /*
  * GPIOs used as interrupts by MAX78M6610+LMU eADC
@@ -217,9 +224,8 @@ static int intel_qrk_spi_get_bpeak_id(u8 *bpeak_id)
 	ret = gpio_request_array(spi_bpeak_id_gpios,
 			ARRAY_SIZE(spi_bpeak_id_gpios));
 	if (ret) {
-		pr_info("%s: Failed to allocate Blackburn Peak ID GPIO pins. Deferring...\n",
+		pr_info("%s: Failed to allocate Blackburn Peak ID GPIO pins\n",
 			__func__);
-		ret = -EPROBE_DEFER;
 		return ret;
 	}
 
@@ -252,7 +258,7 @@ static int intel_qrk_spi_add_bpeak_devs(void)
 
 	ret = intel_qrk_spi_get_bpeak_id(&spi_bpeak_id);
 	if (ret) {
-		pr_info("%s: failed to obtain Blackburn Peak ID. Deferring...\n",
+		pr_info("%s: failed to obtain Blackburn Peak ID\n",
 			__func__);
 		return ret;
 	}
@@ -267,9 +273,8 @@ static int intel_qrk_spi_add_bpeak_devs(void)
 			ret = gpio_request_array(crh_eadc_int_gpios,
 					ARRAY_SIZE(crh_eadc_int_gpios));
 			if (ret) {
-				pr_info("%s: Failed to allocate eADC interrupt GPIO pins! Deferring...\n",
+				pr_info("%s: Failed to allocate eADC interrupt GPIO pins!\n",
 					__func__);
-				ret = -EPROBE_DEFER;
 				return ret;
 			}
 			ret = gpio_to_irq(GPIO_78M6610_INT);
@@ -315,27 +320,90 @@ error_gpio_free:
 	return ret;
 }
 
+/** intel_qrk_spi_devs_addon
+ *
+ * addon spi device when gpio support in place
+ */
+static int intel_qrk_spi_devs_addon(void)
+{
+	int ret = 0;
+
+	if (cross_hill_probe != 1) {
+
+		ret = intel_qrk_spi_add_onboard_devs();
+		if (ret)
+			return ret;
+
+		ret = intel_qrk_spi_add_bpeak_devs();
+
+		cross_hill_probe = 1;
+	}
+
+	return ret;
+}
+
+/**
+ * intel_qrk_gpio_restrict_probe_nc
+ *
+ * Make GPIOs pertaining to Firmware inaccessible by requesting them.  The
+ * GPIOs are never released nor accessed by this driver.
+ */
+static int intel_qrk_gpio_restrict_probe_nc(struct platform_device *pdev)
+{
+	int ret;
+	nc_gpio_reg = 1;
+
+	if (nc_gpio_reg == 1 && sc_gpio_reg == 1) {
+		ret = intel_qrk_spi_devs_addon();
+		if (ret)
+			return ret;
+	}
+	return 0;
+}
+
+/**
+ * intel_qrk_gpio_restrict_probe_sc
+ *
+ * Make GPIOs pertaining to Firmware inaccessible by requesting them.  The
+ * GPIOs are never released nor accessed by this driver.
+ */
+static int intel_qrk_gpio_restrict_probe_sc(struct platform_device *pdev)
+{
+	int ret;
+	sc_gpio_reg = 1;
+
+	if (nc_gpio_reg == 1 && sc_gpio_reg == 1) {
+		ret = intel_qrk_spi_devs_addon();
+		if (ret)
+			return ret;
+	}
+	return 0;
+}
+
+static struct platform_driver gpio_restrict_pdriver_nc = {
+	.driver		= {
+		.name	= GPIO_RESTRICT_NAME_NC,
+		.owner	= THIS_MODULE,
+	},
+	.probe		= intel_qrk_gpio_restrict_probe_nc,
+};
+static struct platform_driver gpio_restrict_pdriver_sc = {
+	.driver		= {
+		.name	= GPIO_RESTRICT_NAME_SC,
+		.owner	= THIS_MODULE,
+	},
+	.probe		= intel_qrk_gpio_restrict_probe_sc,
+};
+
 static int intel_qrk_plat_cross_hill_probe(struct platform_device *pdev)
 {
 	int ret = 0;
-	static int spi_done;
 
-	if (spi_done)
-		goto bpeak_devs;
-
-	ret = intel_qrk_spi_add_onboard_devs();
+	ret = platform_driver_register(&gpio_restrict_pdriver_nc);
 	if (ret)
-		goto end;
+		return ret;
 
-	spi_done = 1;
-
-bpeak_devs:
-	ret = intel_qrk_spi_add_bpeak_devs();
-	if (ret)
-		goto end;
-
-end:
-	return ret;
+	return platform_driver_register(&gpio_restrict_pdriver_sc);
 }
 
 static int intel_qrk_plat_cross_hill_remove(struct platform_device *pdev)
