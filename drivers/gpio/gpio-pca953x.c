@@ -162,6 +162,7 @@ static int pca953x_write_regs(struct pca953x_chip *chip, int reg, u8 *val)
 			ret = i2c_smbus_write_word_data(chip->client,
 							reg << 1, (u16) *val);
 			break;
+		case PCAL953X_TYPE:
 		case PCA957X_TYPE:
 			ret = i2c_smbus_write_byte_data(chip->client, reg << 1,
 							val[0]);
