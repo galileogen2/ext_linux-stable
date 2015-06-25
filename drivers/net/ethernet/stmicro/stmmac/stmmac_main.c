@@ -3019,6 +3019,10 @@ int stmmac_suspend(struct net_device *ndev)
 		/* Disable clock in case of PWM is off */
 		clk_disable(priv->stmmac_clk);
 	}
+
+	/* Free allocated rx buffers */
+	dma_free_rx_skbufs(priv);
+
 	spin_unlock_irqrestore(&priv->lock, flags);
 
 	priv->oldlink = 0;
