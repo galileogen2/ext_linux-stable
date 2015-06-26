@@ -481,7 +481,10 @@ static void pca953x_irq_bus_sync_unlock(struct irq_data *d)
 
 	/* Look for any newly setup interrupt */
 	for (i = 0; i < NBANK(chip); i++) {
-		new_irqs = chip->irq_trig_fall[i] | chip->irq_trig_raise[i];
+		/* Take the interrupt mask into consideration as well when 
+			deciding which pin is the newly setup interrupt */
+		new_irqs = (chip->irq_trig_fall[i] | chip->irq_trig_raise[i]) 
+				& chip->irq_mask[i];
 		new_irqs &= ~chip->reg_direction[i];
 
 		while (new_irqs) {
