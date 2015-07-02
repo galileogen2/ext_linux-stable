@@ -28,6 +28,10 @@
 
 #include "stmmac.h"
 
+static int enable_msi = 1;
+module_param(enable_msi, int, S_IRUGO | S_IWUSR);
+MODULE_PARM_DESC(enable_msi, "Enable PCI MSI mode");
+
 /*
  * This struct is used to associate PCI Function of MAC controller on a board,
  * discovered via DMI, with the address of PHY connected to the MAC. The
@@ -262,7 +266,13 @@ static int stmmac_pci_probe(struct pci_dev *pdev,
 	} else
 		stmmac_default_data(plat);
 
-	pci_enable_msi(pdev);
+	if (enable_msi == 1) {
+		ret = pci_enable_msi(pdev);
+		if (ret)
+			dev_info(&pdev->dev, "stmmac MSI mode NOT enabled\n");
+		else
+			dev_info(&pdev->dev, "stmmac MSI mode enabled\n");
+	}
 
 	priv = stmmac_dvr_probe(&pdev->dev, plat, pcim_iomap_table(pdev)[i]);
 	if (IS_ERR(priv)) {
