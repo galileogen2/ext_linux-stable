@@ -38,7 +38,7 @@
 #include <linux/mfd/intel_qrk_gip_pdata.h>
 
 #define DRIVER_NAME "Galileo"
-#define GPIO_RESTRICT_NAME	"qrk-gpio-restrict-sc"
+#define GPIO_RESTRICT_NAME	"gpio-restrict-sc"
 #define LPC_SCH_SPINAME		"spi-lpc-sch"
 
 /* GPIO line used to detect the LSB of the Cypress i2c address */

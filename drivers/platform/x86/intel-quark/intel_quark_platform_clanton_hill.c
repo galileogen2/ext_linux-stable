@@ -30,7 +30,7 @@
 #include <linux/interrupt.h>
 
 #define DRIVER_NAME		"ClantonHill"
-#define GPIO_RESTRICT_NAME	"qrk-gpio-restrict-nc"
+#define GPIO_RESTRICT_NAME	"gpio-restrict-nc"
 
 /* LTC4417 PowerPath controller output VALID1# is connected to GPIO_SUS<1>,
  * which is Linux gpio3 and its IRQ must be configured as wake_irq */

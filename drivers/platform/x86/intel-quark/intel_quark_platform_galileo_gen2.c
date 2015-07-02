@@ -42,7 +42,7 @@
  ******************************************************************************/
 
 #define DRIVER_NAME "GalileoGen2"
-#define GPIO_RESTRICT_NAME	"qrk-gpio-restrict-sc"
+#define GPIO_RESTRICT_NAME	"gpio-restrict-sc"
 #define LPC_SCH_SPINAME		"spi-lpc-sch"
 
 #define GPIO_PCAL9555A_EXP2_INT		9

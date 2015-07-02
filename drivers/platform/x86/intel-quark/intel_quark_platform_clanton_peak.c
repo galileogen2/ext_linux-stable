@@ -28,8 +28,8 @@
 #include <linux/spi/pxa2xx_spi.h>
 
 #define DRIVER_NAME		"ClantonPeakSVP"
-#define GPIO_RESTRICT_NAME_NC	"qrk-gpio-restrict-nc"
-#define GPIO_RESTRICT_NAME_SC	"qrk-gpio-restrict-sc"
+#define GPIO_RESTRICT_NAME_NC	"gpio-restrict-nc"
+#define GPIO_RESTRICT_NAME_SC	"gpio-restrict-sc"
 
 
 /* GPIO connected to Test Equipment */

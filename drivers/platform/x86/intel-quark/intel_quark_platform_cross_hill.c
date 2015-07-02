@@ -25,8 +25,8 @@
 #include <linux/spi/spi.h>
 
 #define DRIVER_NAME		"CrossHill"
-#define GPIO_RESTRICT_NAME_NC	"qrk-gpio-restrict-nc"
-#define GPIO_RESTRICT_NAME_SC	"qrk-gpio-restrict-sc"
+#define GPIO_RESTRICT_NAME_NC	"gpio-restrict-nc"
+#define GPIO_RESTRICT_NAME_SC	"gpio-restrict-sc"
 
 /*
  * GPIO numbers to use for reading 4-bit Blackburn Peak SPI daughterboard ID

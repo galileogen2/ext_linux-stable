@@ -30,11 +30,10 @@
 #include <linux/uio_driver.h>
 #include "intel_qrk_gip.h"
 
-static void qrk_gpio_restrict_release(struct device *dev) {}
-static struct platform_device qrk_gpio_restrict_pdev =
-{
-	.name	= "qrk-gpio-restrict-sc",
-	.dev.release = qrk_gpio_restrict_release,
+static void gpio_restrict_release(struct device *dev) {}
+static struct platform_device gpio_restrict_pdev = {
+	.name	= "gpio-restrict-sc",
+	.dev.release = gpio_restrict_release,
 };
 struct uio_info *info;
 
@@ -575,7 +574,7 @@ int intel_qrk_gpio_probe(struct pci_dev *pdev)
 		goto err_remove_gpiochip;
 	}
 
-	retval = platform_device_register(&qrk_gpio_restrict_pdev);
+	retval = platform_device_register(&gpio_restrict_pdev);
 	if (retval < 0){
 		goto err_free_irq_descs;
 	}
@@ -654,7 +653,7 @@ void intel_qrk_gpio_remove(struct pci_dev *pdev)
 	kfree(igc);
 	irq_free_descs(irq_base, n_gpio);
 
-	platform_device_unregister(&qrk_gpio_restrict_pdev);
+	platform_device_unregister(&gpio_restrict_pdev);
 
 	/* Release GPIO chip */
 	if (0 != gpiochip_remove(gc))

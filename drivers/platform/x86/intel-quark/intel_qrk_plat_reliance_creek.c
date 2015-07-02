@@ -33,8 +33,8 @@
 #include <linux/platform_data/pch_udc.h>
 
 #define DRIVER_NAME		"RelianceCreek"
-#define GPIO_RESTRICT_NAME_NC	"qrk-gpio-restrict-nc"
-#define GPIO_RESTRICT_NAME_SC	"qrk-gpio-restrict-sc"
+#define GPIO_RESTRICT_NAME_NC	"gpio-restrict-nc"
+#define GPIO_RESTRICT_NAME_SC	"gpio-restrict-sc"
 
 /* GPIO signal names from RelianceCreek board data-sheet, prefixed with GPIO_ */
 #define GPIO_IRQ_SPI2UART_B_BUF		15

@@ -29,7 +29,7 @@
 #include <linux/spi/spi.h>
 
 #define DRIVER_NAME		"KipsBay"
-#define GPIO_RESTRICT_NAME	"qrk-gpio-restrict-sc"
+#define GPIO_RESTRICT_NAME	"gpio-restrict-sc"
 
 static int gpio_cs = 1;
 
