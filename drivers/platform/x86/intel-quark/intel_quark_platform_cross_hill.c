@@ -23,6 +23,7 @@
 #include <linux/printk.h>
 #include <linux/spi/pxa2xx_spi.h>
 #include <linux/spi/spi.h>
+#include <linux/platform_data/tpm_i2c_infenion.h>
 
 #define DRIVER_NAME		"CrossHill"
 #define GPIO_RESTRICT_NAME_NC	"gpio-restrict-nc"
@@ -36,6 +37,11 @@
 #define SPI_BPEAK_ID1_GPIO   2
 #define SPI_BPEAK_ID2_GPIO   15
 #define SPI_BPEAK_ID3_GPIO   14
+
+/* GPIO line used to reset SLB9645TT */
+#define GPIO_SLB9645TT_RESET	7
+/* GPIO line SLB9645TT interrupt are routed to */
+#define GPIO_SLB9645TT_INT	0
 
 /*
  * GPIO number for eADC interrupt (MAX78M6610+LMU)
@@ -72,6 +78,36 @@ enum {
 	QRK_SPI_BPEAK_ID_NONE
 };
 
+/******************************************************************************
+ *             Trust Platform Module
+ ******************************************************************************/
+#define SLB9645TT_ADDR		0x20
+
+struct tpm_i2c_infenion_platform_data slb9645tt_platform_data = {
+	.gpio_reset = GPIO_SLB9645TT_RESET,
+	.gpio_irq = GPIO_SLB9645TT_INT,
+};
+
+static struct i2c_board_info probed_slb9645tt = {
+	.platform_data = &slb9645tt_platform_data,
+};
+
+static const unsigned short slb9645tt_i2c_addr[] = {
+	SLB9645TT_ADDR, I2C_CLIENT_END
+};
+
+static struct gpio reserved_gpios[] = {
+	{
+		GPIO_SLB9645TT_RESET,
+		GPIOF_OUT_INIT_HIGH,
+		"slb96455tt-reset",
+	},
+	{
+		GPIO_SLB9645TT_INT,
+		GPIOF_IN,
+		"slb96455tt-int",
+	},
+};
 
 /******************************************************************************
  *             Analog Devices AD7298 SPI Device Platform Data
@@ -342,6 +378,56 @@ static int intel_qrk_spi_devs_addon(void)
 	return ret;
 }
 
+static int slb9645tt_i2c_probe(struct i2c_adapter *adap, unsigned short addr)
+{
+	return gpio_get_value(GPIO_SLB9645TT_RESET);
+}
+
+/*
+ * intel_qrk_tpm_dev_probe
+ *
+ * add and register TPM I2C device on the platform
+ */
+static int intel_qrk_tpm_dev_probe(void)
+{
+	struct i2c_adapter *i2c_adap;
+	struct i2c_client *slb9645tt;
+	int ret = 0;
+
+	/* Reserve GPIOs for I2C device interrupts */
+	ret = gpio_request_array(reserved_gpios, ARRAY_SIZE(reserved_gpios));
+	if (ret) {
+		pr_err("%s: failed to request reserved gpios\n", __func__);
+		return ret;
+	}
+
+	/* Register onboard TPM device */
+	probed_slb9645tt.irq = gpio_to_irq(GPIO_SLB9645TT_INT);
+
+	i2c_adap = i2c_get_adapter(0);
+	if (NULL == i2c_adap) {
+		pr_info("%s: i2c adapted not ready yet. Deferring..\n",
+			__func__);
+		ret = -EPROBE_DEFER;
+		goto err;
+	}
+	strlcpy(probed_slb9645tt.type, "slb9645tt", I2C_NAME_SIZE);
+	slb9645tt = i2c_new_probed_device(i2c_adap, &probed_slb9645tt,
+					  slb9645tt_i2c_addr,
+					  slb9645tt_i2c_probe);
+	i2c_put_adapter(i2c_adap);
+
+	if (!slb9645tt) {
+		pr_err("%s: can't probe slb9645tt\n", __func__);
+		ret = -ENODEV;
+		goto err;
+	}
+
+err:
+	gpio_free_array(reserved_gpios, ARRAY_SIZE(reserved_gpios));
+	return ret;
+}
+
 /**
  * intel_qrk_gpio_restrict_probe_nc
  *
@@ -355,6 +441,10 @@ static int intel_qrk_gpio_restrict_probe_nc(struct platform_device *pdev)
 
 	if (nc_gpio_reg == 1 && sc_gpio_reg == 1) {
 		ret = intel_qrk_spi_devs_addon();
+		if (ret)
+			return ret;
+
+		ret = intel_qrk_tpm_dev_probe();
 		if (ret)
 			return ret;
 	}
@@ -374,6 +464,10 @@ static int intel_qrk_gpio_restrict_probe_sc(struct platform_device *pdev)
 
 	if (nc_gpio_reg == 1 && sc_gpio_reg == 1) {
 		ret = intel_qrk_spi_devs_addon();
+		if (ret)
+			return ret;
+
+		ret = intel_qrk_tpm_dev_probe();
 		if (ret)
 			return ret;
 	}
