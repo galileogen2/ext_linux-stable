@@ -687,8 +687,8 @@ config INTEL_MFLD_THERMAL
          platform.
 
 config INTEL_QRK_THERMAL
-	bool "Thermal driver for Intel Quark platform"
-	depends on X86_INTEL_QUARK
+	tristate "Thermal driver for Intel Quark platform"
+	depends on X86_INTEL_QUARK && THERMAL
 	help
 	  Say Y here to enable Quark's Thermal driver plus the MSI's
 	  that can be hooked from the thermal sub-system
