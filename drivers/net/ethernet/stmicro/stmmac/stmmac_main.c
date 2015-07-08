@@ -1915,7 +1915,10 @@ static int stmmac_release(struct net_device *dev)
 	netif_carrier_off(dev);
 
 #ifdef CONFIG_DEBUG_FS
-	stmmac_exit_fs();
+	if (debugfs_registered) {
+		debugfs_registered = 0;
+		stmmac_exit_fs();
+	}
 #endif
 
 	stmmac_release_ptp(priv);
