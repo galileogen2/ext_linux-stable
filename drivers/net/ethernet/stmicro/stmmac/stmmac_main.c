@@ -1372,6 +1372,8 @@ static void stmmac_tx_clean(struct stmmac_priv *priv)
 
 	netdev_completed_queue(priv->dev, pkts_compl, bytes_compl);
 
+	spin_unlock(&priv->tx_lock);
+
 	if (unlikely(netif_queue_stopped(priv->dev) &&
 		     stmmac_tx_avail(priv) > STMMAC_TX_THRESH(priv))) {
 		netif_tx_lock(priv->dev);
@@ -1388,7 +1390,6 @@ static void stmmac_tx_clean(struct stmmac_priv *priv)
 		stmmac_enable_eee_mode(priv);
 		mod_timer(&priv->eee_ctrl_timer, STMMAC_LPI_T(eee_timer));
 	}
-	spin_unlock(&priv->tx_lock);
 }
 
 static inline void stmmac_enable_dma_irq(struct stmmac_priv *priv)
