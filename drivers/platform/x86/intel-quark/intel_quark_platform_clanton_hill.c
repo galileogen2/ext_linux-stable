@@ -90,7 +90,7 @@ static const struct st_sensors_platform_data lis331dlh_pdata = {
 
 static const struct lis331dlh_intel_qrk_platform_data lis331dlh_i2c_platform_data = {
 	.irq2_pin = ST_ACCEL_GPIO_S3,
-	.default_lis331dlh_pdata = &lis331dlh_pdata,
+	.default_lis331dlh_pdata = (struct st_sensors_platform_data *)&lis331dlh_pdata,
 };
 
 static struct gpio reserved_gpios[] = {
@@ -112,7 +112,7 @@ static struct gpio reserved_gpios[] = {
 
 static struct i2c_adapter *i2c_adap;
 static struct i2c_board_info probed_i2c_lis331dlh = {
-	.platform_data = &lis331dlh_i2c_platform_data,
+	.platform_data = (void *)&lis331dlh_i2c_platform_data,
 };
 static struct i2c_board_info probed_i2c_max9867;
 static const unsigned short max9867_i2c_addr[] =
