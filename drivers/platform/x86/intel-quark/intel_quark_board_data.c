@@ -32,6 +32,7 @@
 #define SPIFLASH_BASEADDR			0xFFF00000
 #define MFH_OFFSET				0x00008000
 #define PLATFORM_DATA_OFFSET			0x00010000
+#define PLATFORM_DATA_SIZE			0x20000
 #define MTD_PART_OFFSET				0x00050000
 #define MTD_PART_LEN				0x00040000
 #define MFH_PADDING				0x1E8
@@ -170,7 +171,7 @@ static int __init intel_qrk_board_data_init_legacy(void)
 	void __iomem *spi_data;
 	int ret = 0;
 
-	spi_data = ioremap(SPIFLASH_BASEADDR, FLASH_SIZE);
+	spi_data = ioremap(SPIFLASH_BASEADDR, PLATFORM_DATA_OFFSET + PLATFORM_DATA_SIZE);
 	if (!spi_data)
 		return -ENODEV;
 
