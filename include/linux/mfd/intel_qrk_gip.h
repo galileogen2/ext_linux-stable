@@ -20,7 +20,7 @@
 #include <linux/i2c.h>
 #include <linux/mfd/intel_qrk_gip_pdata.h>
 #include <linux/pci.h>
-#include "../i2c/busses/i2c-designware-core.h"
+#include "../../drivers/i2c/busses/i2c-designware-core.h"
 
 /* PCI BAR for register base address */
 #define GIP_I2C_BAR		0
@@ -75,7 +75,7 @@ void intel_qrk_gpio_restore_state(void);
  * intel_qrk_i2c_probe
  * @param pdev: Pointer to GIP PCI device
  * @param drvdata: private driver data
- * @param drvdata: GIP platform-specific settings
+ * @param pdata: GIP platform-specific settings
  * @return 0 success < 0 failure
  *
  * Perform I2C-specific probing on behalf of the top-level GIP driver.

@@ -16,7 +16,7 @@
  *  PCI glue logic for Quark GIP/I2C.
  *  The GIP I2C device is the DesignWare I2C. This file defines the PCI glue
  *  for this driver and is heavily based on
- *  on drivers/i2c/busses/i2c-designware-pcidrv.c.  Also, it relies on
+ *  drivers/i2c/busses/i2c-designware-pcidrv.c.  Also, it relies on
  *  drivers/i2c/busses/i2c-designware-core.c for the core logic.
  *  Please note only a single instance of the I2C device is supported.
  */
@@ -26,11 +26,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/pci.h>
-#include "intel_qrk_gip.h"
-
-enum dw_pci_ctl_id_t {
-	quark_0,
-};
+#include <linux/mfd/intel_qrk_gip.h>
 
 /*
  * By default, driver operates in fast mode (400kHz).
@@ -55,12 +51,7 @@ static struct dw_pci_controller qrk_gip_i2c_controller = {
 	.bus_cfg	= INTEL_QRK_STD_CFG | DW_IC_CON_SPEED_FAST,
 	.tx_fifo_depth	= 16,
 	.rx_fifo_depth	= 16,
-	.clk_khz	=
-#ifdef CONFIG_INTEL_QUARK_X1000_SOC_FPGAEMU
-			14000,
-#else
-			33000,
-#endif
+	.clk_khz	= 33000,
 	//.explicit_stop	= 1,
 };
 
@@ -185,7 +176,6 @@ int intel_qrk_i2c_probe(struct pci_dev *pdev,
 	dev->rx_fifo_depth = controller->rx_fifo_depth;
 	//dev->explicit_stop = controller->explicit_stop;
 
-	/* dw_i2c_dev additional parameters in Kernel 3.14 */
 	dev->sda_hold_time	= 0;
 	dev->sda_falling_time	= 300;
 	dev->scl_falling_time	= 300;
