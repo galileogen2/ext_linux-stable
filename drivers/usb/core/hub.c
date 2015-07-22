@@ -3320,7 +3320,7 @@ int usb_port_resume(struct usb_device *udev, pm_message_t msg)
 
 	clear_bit(port1, hub->busy_bits);
 
-	if (udev->persist_enabled && hub_is_superspeed(hub->hdev))
+	if (udev->persist_enabled)
 		status = wait_for_ss_port_enable(udev, hub, &port1, &portchange,
 				&portstatus);
 
