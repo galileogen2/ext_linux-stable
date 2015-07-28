@@ -755,7 +755,7 @@ config INTEL_QRK_ESRAM
 	  than cache RAM faster than DRAM.
 
 if X86_INTEL_QUARK
-source "drivers/platform/x86/intel-quark/Kconfig
+source "drivers/platform/x86/intel-quark/Kconfig"
 endif
 
 config IBM_RTL
