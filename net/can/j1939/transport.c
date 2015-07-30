@@ -352,7 +352,7 @@ static int j1939tp_tx_dat(struct session *related,
 	skb->pkt_type = related->skb->pkt_type;
 	skb->ip_summed = related->skb->ip_summed;
 
-	can_skb_set_owner(skb, related->skb->sk);
+	skb->sk = related->skb->sk;
 	skb_cb = (void *)skb->cb;
 	*skb_cb = *(related->cb);
 	fix_cb(skb_cb);
@@ -387,6 +387,7 @@ static int j1939xtp_do_tx_ctl(struct sk_buff *related, int extd,
 	skb->protocol = related->protocol;
 	skb->pkt_type = related->pkt_type;
 	skb->ip_summed = related->ip_summed;
+	skb->sk = related->sk;
 	can_skb_set_owner(skb, related->sk);
 
 	skb_cb = (void *)skb->cb;
