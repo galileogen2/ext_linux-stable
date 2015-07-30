@@ -154,9 +154,10 @@ static void dw8250_set_termios(struct uart_port *p, struct ktermios *termios,
 	struct uart_8250_port *up =
 		container_of(p, struct uart_8250_port, port);
 
+#ifdef CONFIG_X86_INTEL_QUARK
 	/* For Quark, hs-uart is capable of auto flow control */
 	up->capabilities |= UART_CAP_AFE;
-
+#endif
 	serial8250_do_set_termios(p, termios, old);
 }
 static int dw8250_handle_irq(struct uart_port *p)

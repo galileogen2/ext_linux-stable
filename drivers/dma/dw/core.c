@@ -1617,8 +1617,8 @@ int dw_dma_probe(struct dw_dma_chip *chip, struct dw_dma_platform_data *pdata)
 			dwc->block_size = pdata->block_size;
 
 			/* Check if channel supports multi block transfer */
-			/*if nollp flag is not set, it causes race condition
-			as this flag used in dwc_do_start*/
+			/* In Quark SoC, nollp flag is enabled by DMA
+			 * controller,hence forcing nollp flag to 1 */
 
 			if (pdata->nollp[i] == true) {
 				dwc->nollp = 1;

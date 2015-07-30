@@ -2409,7 +2409,14 @@ serial8250_do_set_termios(struct uart_port *port, struct ktermios *termios,
 	 * have sufficient FIFO entries for the latency of the remote
 	 * UART to respond.  IOW, at least 32 bytes of FIFO.
 	 */
+
+#ifdef CONFIG_X86_INTEL_QUARK
+	/* Quark SoC has only 16 bytes FIFO and AFE is required for
+	 * higher baud rates to avoid overflow */
 	if (up->capabilities & UART_CAP_AFE) {
+#else
+	if (up->capabilities & UART_CAP_AFE && port->fifosize >= 32) {
+#endif
 		up->mcr &= ~UART_MCR_AFE;
 		if (termios->c_cflag & CRTSCTS)
 			up->mcr |= UART_MCR_AFE;

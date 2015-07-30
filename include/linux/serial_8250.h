@@ -79,6 +79,9 @@ struct uart_8250_port {
 	unsigned int		tx_loadsz;	/* transmit fifo load size */
 	unsigned char		acr;
 	unsigned char		ier;
+#ifdef CONFIG_X86_INTEL_QUARK
+	unsigned char		saved_ier;
+#endif
 	unsigned char		lcr;
 	unsigned char		mcr;
 	unsigned char		mcr_mask;	/* mask of user bits */

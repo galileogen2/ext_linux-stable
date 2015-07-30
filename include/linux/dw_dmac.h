@@ -44,8 +44,7 @@ struct dw_dma_slave {
  * @nr_masters: Number of AHB masters supported by the controller
  * @data_width: Maximum data width supported by hardware per AHB master
  *		(0 - 8bits, 1 - 16bits, ..., 5 - 256bits)
- * @sd: slave specific data. Used for configuring channels
- * @sd_count: count of slave data structures passed.
+ * @nollp: Indicating llp capability of DMA and peripheral
  */
 struct dw_dma_platform_data {
 	unsigned int	nr_channels;
@@ -59,9 +58,6 @@ struct dw_dma_platform_data {
 	unsigned short	block_size;
 	unsigned char	nr_masters;
 	unsigned char	data_width[4];
-	bool		is_embedded;
-	struct dw_dma_slave	*sd;
-	unsigned int	sd_count;
 	bool		nollp[8];
 };
 

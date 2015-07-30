@@ -43,7 +43,6 @@ struct uart_8250_dma {
 	resource_size_t	mapbase;	/* resource base */
 };
 
-
 struct old_serial_port {
 	unsigned int uart;
 	unsigned int baud_base;
@@ -82,7 +81,6 @@ struct serial8250_config {
 #define PROBE_RSA	(1 << 0)
 #define PROBE_ANY	(~0)
 #define HIGH_BITS_OFFSET ((sizeof(long)-sizeof(int))*8)
-#define TRIGGER_LEVEL 8
 #ifdef CONFIG_SERIAL_8250_SHARE_IRQ
 #define SERIAL8250_SHARE_IRQS 1
 #else
