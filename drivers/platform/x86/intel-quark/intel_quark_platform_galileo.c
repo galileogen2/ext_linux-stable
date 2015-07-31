@@ -304,8 +304,7 @@ static int intel_qrk_gpio_restrict_probe(struct platform_device *pdev)
 	if (NULL == i2c_adap) {
 		pr_info("%s: i2c adapter not ready yet. Deferring..\n",
 			__func__);
-		ret = -EPROBE_DEFER;
-		goto end;
+		return -EPROBE_DEFER;
 	}
 
 	ret = gpio_request_array(reserved_gpios, ARRAY_SIZE(reserved_gpios));
