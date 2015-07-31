@@ -27,7 +27,6 @@
 #include <linux/module.h>
 #include <linux/pci.h>
 #include <linux/platform_device.h>
-#include <linux/uio_driver.h>
 #include <linux/mfd/intel_qrk_gip.h>
 
 static void gpio_restrict_release(struct device *dev) {}
@@ -35,7 +34,6 @@ static struct platform_device gpio_restrict_pdev = {
 	.name	= "gpio-restrict-sc",
 	.dev.release = gpio_restrict_release,
 };
-struct uio_info *info;
 
 /* The base GPIO number under GPIOLIB framework */
 #define INTEL_QRK_GIP_GPIO_BASE		8
@@ -496,11 +494,6 @@ int intel_qrk_gpio_probe(struct pci_dev *pdev)
 	int retval = 0;
 	resource_size_t start = 0, len = 0;
 
-	/* Get UIO memory */
-	info = kzalloc(sizeof(struct uio_info), GFP_KERNEL);
-	if (!info)
-		return -ENOMEM;
-
 	/* Determine the address of the GPIO area */
 	start = pci_resource_start(pdev, GIP_GPIO_BAR);
 	len = pci_resource_len(pdev, GIP_GPIO_BAR);
@@ -566,22 +559,6 @@ int intel_qrk_gpio_probe(struct pci_dev *pdev)
 		goto err_unregister_platform_device;
 	}
 
-	/* UIO */
-	info->mem[0].addr = start;
-	info->mem[0].internal_addr = reg_base;
-	info->mem[0].size = len;
-	info->mem[0].memtype = UIO_MEM_PHYS;
-	info->mem[0].name = "gpio_regs";
-	info->name = "gpio uio";
-	info->version = "0.0.1";
-
-	if (uio_register_device(&pdev->dev, info))
-		goto err_unregister_platform_device;
-
-	pr_info("%s UIO addr 0x%08x internal_addr 0x%08x size %lu memtype %d\n",
-		__func__, (unsigned int)info->mem[0].addr,
-		(unsigned int)info->mem[0].internal_addr, info->mem[0].size,
-		info->mem[0].memtype);
 	igc->chip_types->chip.irq_mask = intel_qrk_gpio_irq_mask;
 	igc->chip_types->chip.irq_unmask = intel_qrk_gpio_irq_unmask;
 	igc->chip_types->chip.irq_set_type = intel_qrk_gpio_irq_type;
@@ -606,7 +583,6 @@ err_free_gpiochip:
 err_iounmap:
 	iounmap(reg_base);
 exit:
-	kfree(info);
 	return retval;
 }
 
@@ -640,9 +616,6 @@ void intel_qrk_gpio_remove(struct pci_dev *pdev)
 	/* Release GPIO chip */
 	if (0 != gpiochip_remove(gc))
 		dev_err(&pdev->dev, "failed removing gpio_chip\n");
-
-	uio_unregister_device(info);
-	kfree(info);
 
 	kfree(gc);
 	iounmap(reg_base);
