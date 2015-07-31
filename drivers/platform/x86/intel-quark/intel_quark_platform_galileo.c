@@ -161,8 +161,6 @@ static const unsigned short eeprom_i2c_addr[] = {
 	I2C_CLIENT_END
 };
 
-struct i2c_client *cypress = NULL, *eeprom = NULL;
-
 /******************************************************************************
  *                 Intel Quark SPI Controller Data
  ******************************************************************************/
@@ -297,31 +295,11 @@ static int intel_qrk_gpio_restrict_probe(struct platform_device *pdev)
 {
 	int ret = 0;
 	struct i2c_client *cypress = NULL, *eeprom = NULL;
-	static int spi_done;
-	static int gpios_done;
 
-	if (spi_done)
-		goto gpios;
-
-	ret = intel_qrk_spi_add_onboard_devs();
-	if (ret)
-		goto end;
-
-	spi_done = 1;
-
-gpios:
-	if (gpios_done)
-		goto i2c;
-
-	ret = gpio_request_array(reserved_gpios, ARRAY_SIZE(reserved_gpios));
-	if (ret)
-		goto end;
-
-	probed_i2c_cypress.irq = gpio_to_irq(GPIO_CYPRESS_INT_S3);
-
-	gpios_done = 1;
-
-i2c:
+	/* The sequence of calling spi, gpio & i2c was different and an issue
+	 * was found that the system would lock-up later when running without
+	 * APIC. Calling sequence is now changed to follow the Galileo Gen2. 
+	 */
 	i2c_adap = i2c_get_adapter(0);
 	if (NULL == i2c_adap) {
 		pr_info("%s: i2c adapter not ready yet. Deferring..\n",
@@ -329,13 +307,21 @@ i2c:
 		ret = -EPROBE_DEFER;
 		goto end;
 	}
+
+	ret = gpio_request_array(reserved_gpios, ARRAY_SIZE(reserved_gpios));
+	if (ret){
+		pr_info("%s: failed to request reserved gpios\n",
+			__func__);
+		goto end;
+	}
+
 	strlcpy(probed_i2c_cypress.type, "cy8c9540a", I2C_NAME_SIZE);
+	probed_i2c_cypress.irq = gpio_to_irq(GPIO_CYPRESS_INT_S3);
 	cypress = i2c_new_probed_device(i2c_adap, &probed_i2c_cypress,
 					cypress_i2c_addr, cypress_i2c_probe);
 	strlcpy(probed_i2c_eeprom.type, "at24", I2C_NAME_SIZE);
 	eeprom = i2c_new_probed_device(i2c_adap, &probed_i2c_eeprom,
 					eeprom_i2c_addr, eeprom_i2c_probe);
-	i2c_put_adapter(i2c_adap);
 
 	if (NULL == cypress || NULL == eeprom) {
 		pr_err("%s: can't probe Cypress Expander\n", __func__);
@@ -343,7 +329,11 @@ i2c:
 		goto end;
 	}
 
+	ret = intel_qrk_spi_add_onboard_devs();
+
 end:
+	i2c_put_adapter(i2c_adap);
+
 	return ret;
 }
 
