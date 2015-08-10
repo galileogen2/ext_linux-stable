@@ -135,4 +135,13 @@ config UIO_MF624
 
 	  If you compile this as a module, it will be called uio_mf624.
 
+config INTEL_QRK_GPIO_UIO
+	bool "Intel Quark GPIO UIO Interface"
+	depends on (INTEL_QRK_GIP = 'm') && (GPIO_SCH = 'm')
+	help
+	  Adds a UIO interface to allow direct access to the GPIOs registers.
+	  This allows the user to bypass the default gpiolib sysfs method.
+	  Please note that this is non-coherent with gpiolib and should be used
+	  with the appropriate care and understanding.
+
 endif
