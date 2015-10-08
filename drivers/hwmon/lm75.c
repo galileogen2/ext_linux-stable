@@ -55,6 +55,7 @@ enum lm75_type {		/* keep sorted in alphabetical order */
 	tmp175,
 	tmp275,
 	tmp75,
+	tmp75c,
 };
 
 /* Addresses scanned */
@@ -264,6 +265,11 @@ lm75_probe(struct i2c_client *client, const struct i2c_device_id *id)
 		data->resolution = 12;
 		data->sample_time = HZ / 2;
 		break;
+	case tmp75c:
+		clr_mask |= 1 << 5;		/* not one-shot mode */
+		data->resolution = 12;
+		data->sample_time = HZ / 4;
+		break;
 	}
 
 	/* configure as specified */
@@ -337,6 +343,7 @@ static const struct i2c_device_id lm75_ids[] = {
 	{ "tmp175", tmp175, },
 	{ "tmp275", tmp275, },
 	{ "tmp75", tmp75, },
+	{ "tmp75c", tmp75c, },
 	{ /* LIST END */ }
 };
 MODULE_DEVICE_TABLE(i2c, lm75_ids);
