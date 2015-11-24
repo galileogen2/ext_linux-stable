@@ -86,14 +86,14 @@ struct tpm_i2c_infenion_platform_data slb9645tt_platform_data = {
 /******************************************************************************
  *                        Reliance Creek i2c clients
  ******************************************************************************/
-#define TMP75_ADDR				0x48
+#define TMP75C_ADDR				0x48
 #define EEPROM_ADDR				0x50
 #define PCF8574_EXP1_ADDR			0x23
 #define PCF8574_EXP2_ADDR			0x21
 #define PCF8574_EXP3_ADDR			0x22
 #define SLB9645TT_ADDR				0x20
 
-static struct i2c_board_info probed_i2c_tmp75;
+static struct i2c_board_info probed_i2c_tmp75c;
 static struct i2c_board_info probed_i2c_eeprom;
 static struct i2c_board_info probed_i2c_pcf8574_exp1 = {
 	.platform_data = &pcf8574_platform_data_exp1,
@@ -108,8 +108,8 @@ static struct i2c_board_info probed_slb9645tt = {
 	.platform_data = &slb9645tt_platform_data,
 };
 
-static const unsigned short tmp75_i2c_addr[] = {
-	TMP75_ADDR, I2C_CLIENT_END
+static const unsigned short tmp75c_i2c_addr[] = {
+	TMP75C_ADDR, I2C_CLIENT_END
 };
 static const unsigned short eeprom_i2c_addr[] = {
 	EEPROM_ADDR, I2C_CLIENT_END
@@ -349,11 +349,11 @@ static int intel_qrk_i2c_add_onboard_devs(void)
 	/*
 	 * Register on-board I2C devices
 	 */
-	strlcpy(probed_i2c_tmp75.type, "tmp75", I2C_NAME_SIZE);
-	client = i2c_new_probed_device(i2c_adap, &probed_i2c_tmp75,
-				       tmp75_i2c_addr, i2c_probe);
+	strlcpy(probed_i2c_tmp75c.type, "tmp75c", I2C_NAME_SIZE);
+	client = i2c_new_probed_device(i2c_adap, &probed_i2c_tmp75c,
+				       tmp75c_i2c_addr, i2c_probe);
 	if (client == NULL) {
-		pr_err("%s: Failed to probe tmp75 I2C device\n", __func__);
+		pr_err("%s: Failed to probe tmp75c I2C device\n", __func__);
 		ret = -ENODEV;
 		goto end;
 	}
