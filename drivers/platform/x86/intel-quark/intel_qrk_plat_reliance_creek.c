@@ -78,7 +78,7 @@ static struct pcf857x_platform_data pcf8574_platform_data_exp3 = {
 	.gpio_base = PCF8574_GPIO_BASE_OFFSET + 16,
 };
 
-struct tpm_i2c_infenion_platform_data slb9645tt_platform_data = {
+static struct tpm_i2c_infenion_platform_data slb9645tt_platform_data = {
 	.gpio_reset = GPIO_SLB9645TT_RESET,
 	.gpio_irq = GPIO_SLB9645TT_INT,
 };
