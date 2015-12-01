@@ -192,6 +192,11 @@ static struct stmmac_pci_dmi_data quark_pci_dmi_data[] = {
 		.func = 7,
 		.phy_addr = 1,
 	},
+	{
+		.name = "KipsBay",
+		.func = 6,
+		.phy_addr = 1,
+	},
 	{}
 };
 
