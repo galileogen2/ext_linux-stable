@@ -1049,9 +1049,11 @@ static int can_set_link_af(struct net_device *dev, const struct nlattr *nla)
 			ret = -EPROTONOSUPPORT;
 		else
 			ret = cp->rtnl_link_ops->set_link_af(dev, prot);
-		can_put_proto(cp);
+
 		if (ret < 0)
 			return ret;
+
+		can_put_proto(cp);
 	}
 	return 0;
 }
