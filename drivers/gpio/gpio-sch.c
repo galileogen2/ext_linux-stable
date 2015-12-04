@@ -323,16 +323,17 @@ static int sch_gpio_irq_type(struct irq_data *d, unsigned type)
  */
 int sch_gpio_resume_irq_set_wake(struct irq_data *d, unsigned int on)
 {
-	struct sch_gpio *sch = irq_data_get_irq_chip_data(d);
+	struct sch_gpio *sch = NULL;
 	u32 gpio_num = 0;
 	int ret = 0;
 
 	if (NULL == d) {
-		dev_err(sch->chip.dev, "null irq_data\n");
+		pr_err("%s: null irq_data\n", __func__);
 		ret = -EFAULT;
 		goto end;
 	}
 
+	sch = irq_data_get_irq_chip_data(d);
 	gpio_num = irq_to_gpio_number();
 	/* This function is only relavent on resume well GPIO */
 	if (gpio_num < sch->resume_base) {
