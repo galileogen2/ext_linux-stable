@@ -228,7 +228,7 @@ static int intel_qrk_gip_probe(struct pci_dev *pdev,
 		pci_set_master(pdev);
 		retval = pci_enable_msi(pdev);
 		if (retval)
-			goto err_release_drvdata;
+			dev_dbg(&pdev->dev, "failed to allocate MSI entry\n");
 	}
 
 	/*
