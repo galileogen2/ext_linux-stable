@@ -249,7 +249,7 @@ static void slc_bump(struct slcan *sl)
 
 	dev_idx = frame_type_pos ? sl->rbuff[0] - '0' : 0;
 
-	if (sl->dev[dev_idx] == NULL)
+	if (dev_idx >= MUX_NETDEV_MAX || sl->dev[dev_idx] == NULL)
 		return;
 
 	skb->dev = sl->dev[dev_idx];
