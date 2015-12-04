@@ -223,6 +223,8 @@ static int stmmac_pci_probe(struct pci_dev *pdev,
 	struct stmmac_pci_info *info = (struct stmmac_pci_info *)id->driver_data;
 	struct plat_stmmacenet_data *plat;
 	struct stmmac_priv *priv;
+	void __iomem *stmmac_ioaddr = NULL;
+
 	int i;
 	int ret;
 
@@ -279,7 +281,13 @@ static int stmmac_pci_probe(struct pci_dev *pdev,
 			dev_info(&pdev->dev, "stmmac MSI mode enabled\n");
 	}
 
-	priv = stmmac_dvr_probe(&pdev->dev, plat, pcim_iomap_table(pdev)[i]);
+	stmmac_ioaddr = pcim_iomap_table(pdev)[i];
+	if (!stmmac_ioaddr) {
+		dev_err(&pdev->dev, "%s: main driver iomap failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	priv = stmmac_dvr_probe(&pdev->dev, plat, stmmac_ioaddr);
 	if (IS_ERR(priv)) {
 		dev_err(&pdev->dev, "%s: main driver probe failed\n", __func__);
 		return PTR_ERR(priv);
