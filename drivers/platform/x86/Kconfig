@@ -754,10 +754,6 @@ config INTEL_QRK_ESRAM
 	  far faster access to code/data than ordinary DRAM. Slower
 	  than cache RAM faster than DRAM.
 
-if X86_INTEL_QUARK
-source "drivers/platform/x86/intel-quark/Kconfig"
-endif
-
 config IBM_RTL
 	tristate "Device driver to enable PRTL support"
 	depends on X86 && PCI
