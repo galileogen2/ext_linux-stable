@@ -11,8 +11,9 @@
  * more details.
  */
 
-/* Driver loaded by kernel when BSP creates a pch-gpio-vbus platform device.
- * Used for passing the pdata from BSP layer to PCI driver layer
+/*
+ * Driver for when the BSP creates a pch-gpio-vbus platform device.
+ * Used for passing the pdata from BSP layer to the PCI driver layer
  */
 
 #include <linux/module.h>
@@ -21,13 +22,11 @@
 
 static struct pch_udc_platform_data *pdata;
 
-
 struct pch_udc_platform_data *get_pch_udc_platform_data(void)
 {
 	return pdata;
 }
 EXPORT_SYMBOL_GPL(get_pch_udc_platform_data);
-
 
 static int pch_udc_gpio_vbus_probe(struct platform_device *pdev)
 {
@@ -51,7 +50,7 @@ static struct platform_driver pch_udc_gpio_vbus_driver = {
 };
 module_platform_driver(pch_udc_gpio_vbus_driver);
 
-MODULE_AUTHOR("Bogdan Pricop <bogdan.pricop@emutex.com>");
+MODULE_AUTHOR("Intel Corporation");
 MODULE_DESCRIPTION("USB pch-udc platform data");
 MODULE_LICENSE("GPL");
 MODULE_ALIAS("platform:pch_gpio_vbus");

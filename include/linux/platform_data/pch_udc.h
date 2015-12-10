@@ -1,5 +1,5 @@
 /*
- * Intel QRK/EG20T OCH/LAPIS Semiconductor UDC driver
+ * Intel QUARK/EG20T OCH/LAPIS Semiconductor UDC driver
  *
  * Copyright(c) 2015 Intel Corporation
  *
@@ -18,11 +18,11 @@
 
 /**
  * struct pch_udc_platform_data - Structure holding GPIO informaton
- *					for detecting VBUS
- * @vbus_gpio_port:		gpio port number
+ *				  for detecting VBUS
+ * @vbus_gpio_port: gpio port number
  */
 struct pch_udc_platform_data {
-	int		    vbus_gpio_port;
+	int	vbus_gpio_port;
 };
 
 #endif /* LINUX_PLATFORM_DATA_PCH_UDC_H */

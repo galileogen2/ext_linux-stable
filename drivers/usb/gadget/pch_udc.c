@@ -33,8 +33,10 @@ static unsigned int phy_err_time = 100;
 module_param(phy_err_time, uint, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(phy_err_time, "delay time between disconnect in milliseconds");
 
-static unsigned long  phy_err_time_jiffies;	/* delay time between disconnect  */
-static unsigned long  phy_err_backoff_end;	/* timeout for PHY ERR disconnect */
+/* delay time between disconnect */
+static unsigned long  phy_err_time_jiffies;
+/* timeout for PHY ERR disconnect */
+static unsigned long  phy_err_backoff_end;
 
 /* GPIO port for VBUS detecting */
 static int vbus_gpio_port = -1;		/* GPIO port number (-1:Not used) */
@@ -3182,12 +3184,10 @@ static void pch_udc_remove(struct pci_dev *pdev)
 
 	pch_udc_exit(dev);
 
-	if (dev->irq_registered)
-		{
+	if (dev->irq_registered) {
 		free_irq(pdev->irq, dev);
-		if (enable_msi){
+		if (enable_msi)
 			pci_disable_msi(pdev);
-		}
 	}
 	if (dev->base_addr)
 		iounmap(dev->base_addr);
@@ -3252,9 +3252,11 @@ static int pch_udc_probe(struct pci_dev *pdev,
 		goto finished;
 	}
 
-	/* If the driver runs on a HW platform which supports GPIO VBUS sensing
+	/*
+	 * If the driver runs on a HW platform which supports GPIO VBUS sensing
 	 * and the BSP layer initialises the platform data structure, get it
-	 * through pch-gpio-vbus driver */
+	 * through pch-gpio-vbus driver
+	 */
 #ifdef CONFIG_USB_EG20T_GPIO_VBUS
 	dev_info(&pdev->dev, "GPIO VBUS support present!\n");
 	struct pch_udc_platform_data *pdata = NULL;

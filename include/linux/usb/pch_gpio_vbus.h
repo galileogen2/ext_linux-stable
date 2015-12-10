@@ -21,5 +21,4 @@
  */
 struct pch_udc_platform_data *get_pch_udc_platform_data(void);
 
-
 #endif /* PCH_GPIO_VBUS_H */
