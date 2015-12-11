@@ -174,67 +174,7 @@ static struct pxa2xx_spi_chip qrk_ffrd_spi_1_cs_0 = {
 
 #define LPC_SCH_SPI_BUS_ID 0x03
 
-/**
- * Eventhough the board file has the entry for m25p80,
- * the mtd partitions are not exposed by BIOS to the kernel,
- * hence removing the entry in the board file ,May be useful
- * in future if BIOS provides the mtd partitions to the kernel
- */
-
-#if 0
-struct mtd_partition ilb_partitions[] = {
-	{
-		.name		= "grub",
-		.size		= 4096,
-		.offset		= 0,
-	},
-	{
-		.name		= "grub.conf",
-		.size		= 0xA00,
-		.offset		= 0x50500,
-	},
-	{
-		.name		= "layout.conf",
-		.size		= 4096,
-		.offset		= 0x708000,
-	},
-	{
-		.name		= "sketch",
-		.size		= 0x40000,
-		.offset		= 0x750000,
-	},
-	{
-		.name		= "raw",
-		.size		= 8192000,
-		.offset		= 0,
-
-	},
-};
-
-
-
-static struct flash_platform_data ilb_flash = {
-	.type = "s25fl064k",
-	.parts = ilb_partitions,
-	.nr_parts = ARRAY_SIZE(ilb_partitions),
-};
-#endif
-
 static struct spi_board_info spi_onboard_devs[] = {
-
-/**
- * Eventhough the board file has the entry for m25p80,
- * the mtd partitions are not exposed by BIOS to the kernel,
- * hence disabling the entry in the board file
- */
-#if 0
-	{
-		.modalias = "m25p80",
-		.platform_data = &ilb_flash,
-		.bus_num = LPC_SCH_SPI_BUS_ID,
-		.chip_select = 0,
-	},
-#endif
 	{
 		.modalias = "ad7298",
 		.max_speed_hz = 5000000,
