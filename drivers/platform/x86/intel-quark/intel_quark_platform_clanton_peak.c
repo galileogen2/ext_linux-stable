@@ -248,6 +248,12 @@ static int intel_qrk_gpio_restrict_probe_nc(struct platform_device *pdev)
 	return ret;
 }
 
+static int intel_qrk_gpio_restrict_remove_nc(struct platform_device *pdev)
+{
+	nc_gpio_reg = 0;
+	return 0;
+}
+
 static int intel_qrk_gpio_restrict_probe_sc(struct platform_device *pdev)
 {
 	int ret = 0;
@@ -263,12 +269,19 @@ static int intel_qrk_gpio_restrict_probe_sc(struct platform_device *pdev)
 	return ret;
 }
 
+static int intel_qrk_gpio_restrict_remove_sc(struct platform_device *pdev)
+{
+	sc_gpio_reg = 0;
+	return 0;
+}
+
 static struct platform_driver gpio_restrict_pdriver_nc = {
 	.driver		= {
 		.name	= GPIO_RESTRICT_NAME_NC,
 		.owner	= THIS_MODULE,
 	},
 	.probe		= intel_qrk_gpio_restrict_probe_nc,
+	.remove		= intel_qrk_gpio_restrict_remove_nc,
 };
 
 static struct platform_driver gpio_restrict_pdriver_sc = {
@@ -277,6 +290,7 @@ static struct platform_driver gpio_restrict_pdriver_sc = {
 		.owner	= THIS_MODULE,
 	},
 	.probe		= intel_qrk_gpio_restrict_probe_sc,
+	.remove		= intel_qrk_gpio_restrict_remove_sc,
 };
 
 static int intel_qrk_plat_clanton_peak_probe(struct platform_device *pdev)
