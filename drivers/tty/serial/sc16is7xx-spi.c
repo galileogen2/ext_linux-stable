@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2014 GridPoint
  * Author: Jon Ringle <jringle@gridpoint.com>
+ * Copyright (C) 2015 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -79,6 +80,8 @@ static struct spi_driver sc16is7xx_spi_driver = {
 };
 module_spi_driver(sc16is7xx_spi_driver);
 
-MODULE_AUTHOR("Bogdan Pricop <bogdan.pricop@emutex.com>");
+MODULE_ALIAS("spi:sc16is7xx");
+
+MODULE_AUTHOR("Intel Corporation");
 MODULE_DESCRIPTION("SC16IS7XX tty serial driver over SPI bus");
 MODULE_LICENSE("GPL v2");

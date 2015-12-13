@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2014 GridPoint
  * Author: Jon Ringle <jringle@gridpoint.com>
+ * Copyright (C) 2015 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -82,6 +83,6 @@ module_i2c_driver(sc16is7xx_i2c_uart_driver);
 
 MODULE_ALIAS("i2c:sc16is7xx");
 
-MODULE_AUTHOR("Nicolás Pernas Maradei <nicolas.pernas.maradei@emutex.com>");
+MODULE_AUTHOR("Intel Corporation");
 MODULE_DESCRIPTION("SC16IS7XX tty serial driver over I2C bus");
 MODULE_LICENSE("GPL v2");

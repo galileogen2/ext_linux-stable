@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2014 GridPoint
  * Author: Jon Ringle <jringle@gridpoint.com>
+ * Copyright (C) 2015 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -12,7 +13,6 @@
 
 #ifndef _SC16IS7XX_H_
 #define _SC16IS7XX_H_
-
 
 /* Misc definition used in core module (sc16is7xx.c) and in I2C/SPI bus
  * specific modules */
@@ -24,7 +24,6 @@ struct sc16is7xx_devtype {
 	int	nr_gpio;
 	int	nr_uart;
 };
-
 
 static struct sc16is7xx_devtype sc16is74x_devtype = {
 	.name		= "SC16IS74X",
